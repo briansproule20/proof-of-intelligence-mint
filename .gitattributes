@@ -1,0 +1,31 @@
+# Auto detect text files and perform LF normalization
+* text=auto
+
+# Solidity
+*.sol text diff=solidity
+
+# TypeScript
+*.ts text diff=typescript
+*.tsx text diff=typescript
+
+# JavaScript
+*.js text diff=javascript
+*.jsx text diff=javascript
+
+# JSON
+*.json text
+
+# Markdown
+*.md text diff=markdown
+
+# YAML
+*.yml text
+*.yaml text
+
+# Shell scripts
+*.sh text eol=lf
+
+# Lockfiles
+pnpm-lock.yaml binary
+package-lock.json binary
+yarn.lock binary

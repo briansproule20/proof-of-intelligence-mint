@@ -191,10 +191,10 @@ export default function HomePage() {
       <footer className="border-t mt-20">
         <div className="container mx-auto px-4 py-8">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <a href="https://www.merit.systems/" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
               <Sparkles className="h-4 w-4" />
-              <span>Built for Merit Systems</span>
-            </div>
+              <span>Built with Merit Systems</span>
+            </a>
             <div className="flex gap-6 text-sm text-muted-foreground">
               <a href="https://echo.merit.systems/docs" target="_blank" rel="noopener noreferrer" className="hover:text-foreground transition-colors">
                 Echo Docs
@@ -202,7 +202,7 @@ export default function HomePage() {
               <a href="https://docs.base.org" target="_blank" rel="noopener noreferrer" className="hover:text-foreground transition-colors">
                 Base Docs
               </a>
-              <a href="https://github.com" target="_blank" rel="noopener noreferrer" className="hover:text-foreground transition-colors">
+              <a href="https://github.com/briansproule20/proof-of-intelligence-mint" target="_blank" rel="noopener noreferrer" className="hover:text-foreground transition-colors">
                 GitHub
               </a>
             </div>

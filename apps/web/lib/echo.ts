@@ -1,55 +1,87 @@
 import { EchoQuestion, EchoAnswerVerification } from '@poim/shared';
+import { getQuestionGenerator } from './question-generator';
+import { getQuestionCache } from './question-cache';
 
 const ECHO_API_BASE = 'https://api.echo.merit.systems';
 const ECHO_API_KEY = process.env.ECHO_API_KEY || '';
 
 export interface EchoClient {
-  getQuestion(userId: string): Promise<EchoQuestion>;
+  getQuestion(userId: string, difficulty?: 'easy' | 'medium' | 'hard'): Promise<EchoQuestion>;
   verifyAnswer(verification: EchoAnswerVerification): Promise<boolean>;
 }
 
 /**
  * Echo API client for server-side operations
- * Note: This is a mock implementation. Replace with actual Echo API calls
- * based on Echo documentation at https://echo.merit.systems/docs
+ * Now uses LLM-powered question generation via x402 payments
  */
 export const echoClient: EchoClient = {
-  async getQuestion(userId: string): Promise<EchoQuestion> {
-    // TODO: Replace with actual Echo API call
-    // const response = await fetch(`${ECHO_API_BASE}/questions/next`, {
-    //   headers: {
-    //     'Authorization': `Bearer ${ECHO_API_KEY}`,
-    //     'Content-Type': 'application/json',
-    //   },
-    //   method: 'POST',
-    //   body: JSON.stringify({ userId }),
-    // });
-    // return response.json();
+  async getQuestion(userId: string, difficulty: 'easy' | 'medium' | 'hard' = 'easy'): Promise<EchoQuestion> {
+    const cache = getQuestionCache();
 
-    // Mock implementation for development
-    return {
-      id: `q_${Date.now()}`,
-      question: 'What is the capital of France?',
-      options: ['London', 'Paris', 'Berlin', 'Madrid'],
-      difficulty: 'easy',
-    };
+    try {
+      // Use LLM to generate questions via x402 payments
+      const generator = getQuestionGenerator();
+      const question = await generator.generateQuestion(userId, difficulty);
+
+      // Extract and store the correct answer in cache
+      const meta = (question as any)._meta;
+      if (meta && meta.correctAnswer) {
+        cache.store(question, meta.correctAnswer);
+        console.log('[EchoClient] Stored question in cache:', question.id);
+      }
+
+      // Remove metadata before returning (don't send correct answer to client!)
+      const { _meta, ...cleanQuestion } = question as any;
+
+      console.log('[EchoClient] Generated LLM question:', cleanQuestion.id);
+      return cleanQuestion;
+    } catch (error) {
+      console.error('[EchoClient] LLM question generation failed:', error);
+
+      // Fallback to mock if LLM fails (e.g., missing credentials)
+      console.warn('[EchoClient] Falling back to mock question');
+      const mockQuestion = {
+        id: `mock_${Date.now()}`,
+        question: 'What is the capital of France? (Mock fallback - set up CDP credentials)',
+        options: ['London', 'Paris', 'Berlin', 'Madrid'],
+        difficulty: 'easy' as const,
+      };
+
+      // Store mock answer in cache
+      cache.store(mockQuestion, 'Paris');
+
+      return mockQuestion;
+    }
   },
 
   async verifyAnswer(verification: EchoAnswerVerification): Promise<boolean> {
-    // TODO: Replace with actual Echo API call
-    // const response = await fetch(`${ECHO_API_BASE}/questions/verify`, {
-    //   headers: {
-    //     'Authorization': `Bearer ${ECHO_API_KEY}`,
-    //     'Content-Type': 'application/json',
-    //   },
-    //   method: 'POST',
-    //   body: JSON.stringify(verification),
-    // });
-    // const result = await response.json();
-    // return result.correct === true;
+    const cache = getQuestionCache();
 
-    // Mock implementation for development (Paris is correct answer)
-    return verification.answer === 'Paris';
+    try {
+      // Retrieve the question from cache
+      const cached = cache.get(verification.questionId);
+      if (!cached) {
+        console.error('[EchoClient] Question not found in cache:', verification.questionId);
+        return false;
+      }
+
+      // Verify the answer
+      const isCorrect = verification.answer === cached.correctAnswer;
+
+      console.log('[EchoClient] Answer verification:', {
+        questionId: verification.questionId,
+        userAnswer: verification.answer,
+        isCorrect,
+      });
+
+      // Delete the question from cache after verification (one-time use)
+      cache.delete(verification.questionId);
+
+      return isCorrect;
+    } catch (error) {
+      console.error('[EchoClient] Answer verification failed:', error);
+      return false;
+    }
   },
 };
 

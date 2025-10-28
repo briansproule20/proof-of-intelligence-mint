@@ -3,7 +3,24 @@
     "allow": [
       "Bash(mkdir:*)",
       "Bash(forge init:*)",
-      "Read(//Users/briansproule/**)"
+      "Read(//Users/briansproule/**)",
+      "WebFetch(domain:www.npmjs.com)",
+      "WebFetch(domain:echo.merit.systems)",
+      "Bash(npm install:*)",
+      "Bash(pnpm add:*)",
+      "Bash(pnpm dev)",
+      "Bash(cat:*)",
+      "Bash(forge:*)",
+      "Bash(curl:*)",
+      "Bash(bash)",
+      "Bash(source ~/.zshenv)",
+      "Bash(foundryup)",
+      "Bash(cast wallet:*)",
+      "Bash(cast balance:*)",
+      "Bash(node:*)",
+      "Bash(cd:*)",
+      "WebFetch(domain:sdk.vercel.ai)",
+      "Bash(pkill:*)"
     ],
     "deny": [],
     "ask": []

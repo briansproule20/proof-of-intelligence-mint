@@ -4,27 +4,27 @@ import {
   AnswerResponse,
   MINT_AMOUNT,
 } from '@poim/shared';
-import { echoClient } from '@/lib/echo';
 import { generateMintSignature, getNextNonce } from '@/lib/signature';
 import { CONTRACT_ADDRESS, CHAIN_ID } from '@/lib/contract';
+import { echoClient } from '@/lib/echo';
 
 /**
  * POST /api/answer/:id
  *
- * Submit an answer to a question with payment verification via header
- * The mint fee (paid via POIC token) serves as the access payment
+ * Submit an answer to a question
+ * Verifies answer via Echo client
  */
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const questionId = params.id;
+    const { id: questionId } = await params;
     const body = await request.json();
 
-    // Validate request
-    const validationResult = AnswerRequestSchema.safeParse(body);
-    if (!validationResult.success) {
+    const { answer, walletAddress } = body;
+
+    if (!answer || !walletAddress) {
       return NextResponse.json(
         {
           correct: false,
@@ -34,18 +34,10 @@ export async function POST(
       );
     }
 
-    const { answer, walletAddress } = validationResult.data;
-
-    // Check Payment header (optional - for future implementation)
-    const paymentHeader = request.headers.get('Payment');
-    // In production, verify payment transaction here
-    // For now, the mint itself serves as the payment mechanism
-
-    // Verify answer with Echo
+    // Verify answer via Echo client
     const isCorrect = await echoClient.verifyAnswer({
       questionId,
-      answer,
-      userId: walletAddress, // Using wallet as userId for simplicity
+      answer
     });
 
     if (!isCorrect) {

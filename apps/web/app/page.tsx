@@ -1,7 +1,10 @@
+'use client';
+
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Sparkles, Wallet, Brain, Coins, ArrowRight, CheckCircle2 } from 'lucide-react';
+import { WalletConnect } from '@/components/WalletConnect';
 
 export default function HomePage() {
   return (
@@ -13,14 +16,15 @@ export default function HomePage() {
             <Sparkles className="h-6 w-6 text-primary" />
             <span className="font-bold text-xl">POIM</span>
           </div>
-          <nav className="hidden md:flex items-center gap-6">
-            <Link href="#features" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+          <nav className="flex items-center gap-6">
+            <Link href="#features" className="hidden md:block text-sm text-muted-foreground hover:text-foreground transition-colors">
               Features
             </Link>
-            <Link href="#how-it-works" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+            <Link href="#how-it-works" className="hidden md:block text-sm text-muted-foreground hover:text-foreground transition-colors">
               How It Works
             </Link>
-            <Button asChild size="sm">
+            <WalletConnect />
+            <Button asChild size="sm" className="hidden md:flex">
               <Link href="/play">Launch App</Link>
             </Button>
           </nav>
@@ -32,7 +36,7 @@ export default function HomePage() {
         <div className="max-w-3xl mx-auto text-center space-y-8">
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium">
             <Sparkles className="h-4 w-4" />
-            Powered by Echo & Base
+            Powered by x402 on Base
           </div>
 
           <h1 className="text-4xl md:text-6xl font-bold tracking-tight">

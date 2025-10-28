@@ -31,10 +31,11 @@ export default function PlayPage() {
 
   // Fetch question on mount
   useEffect(() => {
-    if (isConnected) {
+    if (isConnected && address) {
       fetchQuestion();
     }
-  }, [isConnected]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isConnected, address]);
 
   // Reset when transaction succeeds
   useEffect(() => {
@@ -46,31 +47,41 @@ export default function PlayPage() {
   }, [isSuccess]);
 
   const fetchQuestion = async () => {
+    if (!address) {
+      setError('Wallet not connected');
+      return;
+    }
+
     try {
       setIsLoading(true);
       setError('');
       setRequiresPayment(false);
 
+      // Fetch question from API endpoint
       const response = await fetch(`/api/question?userId=${address}`);
       const data: QuestionResponse = await response.json();
 
       if (data.requiresPayment) {
         setRequiresPayment(true);
         setPaymentInfo(data);
-      } else {
+        setError(data.message || 'Payment required');
+        return;
+      }
+
+      if (data.question) {
         setQuestion(data.question);
         setQuestionId(data.question.id);
       }
-    } catch (err) {
-      setError('Failed to load question');
-      console.error(err);
+    } catch (err: any) {
+      console.error('[PlayPage] Failed to fetch question:', err);
+      setError(err.message || 'Failed to load question');
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleSubmitAnswer = async () => {
-    if (!selectedAnswer || !questionId || !address) return;
+    if (!selectedAnswer || !questionId || !address || !question) return;
 
     try {
       setIsLoading(true);

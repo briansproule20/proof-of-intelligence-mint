@@ -35,11 +35,8 @@ export function TokenBalance() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="text-3xl font-bold text-primary">
-            <span className="flex items-center gap-2">
-              <Loader2 className="h-6 w-6 animate-spin" />
-              Loading...
-            </span>
+          <div className="text-muted-foreground text-sm">
+            Connect wallet to view balance
           </div>
         </CardContent>
       </Card>

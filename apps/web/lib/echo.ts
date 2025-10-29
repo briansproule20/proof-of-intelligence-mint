@@ -35,20 +35,43 @@ export const echoClient: EchoClient = {
 
       console.log('[EchoClient] Generated LLM question:', cleanQuestion.id);
       return cleanQuestion;
-    } catch (error) {
-      console.error('[EchoClient] LLM question generation failed:', error);
+    } catch (error: any) {
+      // Fallback to mock questions if x402 payment fails (e.g., needs mainnet USDC)
+      console.warn('[EchoClient] LLM failed, using mock question. Error:', error.message);
 
-      // Fallback to mock if LLM fails (e.g., missing credentials)
-      console.warn('[EchoClient] Falling back to mock question');
-      const mockQuestion = {
-        id: `mock_${Date.now()}`,
-        question: 'What is the capital of France? (Mock fallback - set up CDP credentials)',
-        options: ['London', 'Paris', 'Berlin', 'Madrid'],
-        difficulty: 'easy' as const,
+      const mockQuestions = [
+        {
+          question: 'What is the capital of France?',
+          options: ['London', 'Paris', 'Berlin', 'Madrid'],
+          correctAnswer: 'Paris',
+        },
+        {
+          question: 'Which planet is known as the Red Planet?',
+          options: ['Venus', 'Mars', 'Jupiter', 'Saturn'],
+          correctAnswer: 'Mars',
+        },
+        {
+          question: 'Who painted the Mona Lisa?',
+          options: ['Van Gogh', 'Picasso', 'Da Vinci', 'Monet'],
+          correctAnswer: 'Da Vinci',
+        },
+        {
+          question: 'What is 2 + 2?',
+          options: ['3', '4', '5', '6'],
+          correctAnswer: '4',
+        },
+      ];
+
+      const randomMock = mockQuestions[Math.floor(Math.random() * mockQuestions.length)];
+      const mockQuestion: EchoQuestion = {
+        id: `mock_${Date.now()}_${Math.random().toString(36).substring(7)}`,
+        question: randomMock.question,
+        options: randomMock.options,
+        difficulty,
       };
 
-      // Store mock answer in cache
-      cache.store(mockQuestion, 'Paris');
+      cache.store(mockQuestion, randomMock.correctAnswer);
+      console.log('[EchoClient] Stored mock question in cache:', mockQuestion.id);
 
       return mockQuestion;
     }

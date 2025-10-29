@@ -2,8 +2,9 @@ import { createX402OpenAI } from '@merit-systems/ai-x402/server';
 import { CdpClient } from '@coinbase/cdp-sdk';
 import { generateText } from 'ai';
 import type { EchoQuestion } from '@poim/shared';
-import { createWalletClient, custom } from 'viem';
+import { createWalletClient, custom, http } from 'viem';
 import { baseSepolia } from 'viem/chains';
+import { privateKeyToAccount } from 'viem/accounts';
 
 // CDP Account to Viem WalletClient converter
 function createCdpWalletClient(cdpAccount: any) {
@@ -34,8 +35,11 @@ function createCdpWalletClient(cdpAccount: any) {
     signTransaction: async () => {
       throw new Error('Transaction signing not supported');
     },
-    signTypedData: async () => {
-      throw new Error('Typed data signing not supported');
+    signTypedData: async (typedData: any) => {
+      // x402 uses EIP-712 typed data signing for payment authorization
+      // CDP SDK supports this via signTypedData
+      const signature = await cdpAccount.signTypedData(typedData);
+      return signature as `0x${string}`;
     },
   };
 
@@ -74,48 +78,32 @@ export class QuestionGenerator {
   async initialize(): Promise<void> {
     if (this.initialized) return;
 
-    // Check for required environment variables
-    const requiredEnvVars = [
-      'CDP_API_KEY_ID',
-      'CDP_API_KEY_SECRET',
-      'CDP_WALLET_SECRET',
-      'CDP_WALLET_OWNER',
-    ];
+    // Use MINT_SIGNER_PRIVATE_KEY for x402 payments wallet
+    const privateKey = process.env.MINT_SIGNER_PRIVATE_KEY;
 
-    const missingVars = requiredEnvVars.filter((varName) => !process.env[varName]);
-    if (missingVars.length > 0) {
-      throw new Error(
-        `Missing required CDP environment variables: ${missingVars.join(', ')}\n` +
-          'Please see CDP_SETUP_GUIDE.md for setup instructions.'
-      );
+    if (!privateKey) {
+      throw new Error('Missing MINT_SIGNER_PRIVATE_KEY for x402 payments');
     }
 
     try {
-      // Initialize CDP client
-      this.cdpClient = new CdpClient({
-        apiKeyId: process.env.CDP_API_KEY_ID!,
-        apiKeySecret: process.env.CDP_API_KEY_SECRET!,
-        walletSecret: process.env.CDP_WALLET_SECRET!,
+      // Create viem wallet client from private key
+      const account = privateKeyToAccount(privateKey as `0x${string}`);
+      const walletClient = createWalletClient({
+        account,
+        chain: baseSepolia,
+        transport: http(process.env.NEXT_PUBLIC_BASE_SEPOLIA_RPC_URL),
       });
-
-      // Get or create account
-      const account = await this.cdpClient.evm.getOrCreateAccount({
-        name: process.env.CDP_WALLET_OWNER!,
-      });
-
-      // Create viem WalletClient from CDP account
-      const walletClient = createCdpWalletClient(account);
 
       // Initialize x402 OpenAI provider
       this.openai = createX402OpenAI(walletClient);
       this.initialized = true;
 
-      console.log('[QuestionGenerator] Successfully initialized with CDP wallet:', account.address);
+      console.log('[QuestionGenerator] Successfully initialized with wallet:', account.address);
       console.log('[QuestionGenerator] Using x402 payments via Echo router');
     } catch (error) {
       console.error('[QuestionGenerator] Initialization failed:', error);
       throw new Error(
-        'Failed to initialize CDP client. Please check your credentials in .env.local'
+        'Failed to initialize x402 wallet. Please check your credentials in .env.local'
       );
     }
   }

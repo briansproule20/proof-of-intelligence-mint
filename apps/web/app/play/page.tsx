@@ -29,13 +29,11 @@ export default function PlayPage() {
     hash,
   });
 
-  // Fetch question on mount
+  // Fetch question on mount (no wallet needed)
   useEffect(() => {
-    if (isConnected && address) {
-      fetchQuestion();
-    }
+    fetchQuestion();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isConnected, address]);
+  }, []);
 
   // Reset when transaction succeeds
   useEffect(() => {
@@ -47,18 +45,14 @@ export default function PlayPage() {
   }, [isSuccess]);
 
   const fetchQuestion = async () => {
-    if (!address) {
-      setError('Wallet not connected');
-      return;
-    }
-
     try {
       setIsLoading(true);
       setError('');
       setRequiresPayment(false);
 
-      // Fetch question from API endpoint
-      const response = await fetch(`/api/question?userId=${address}`);
+      // Fetch question from API endpoint (no wallet needed - x402 handles payments on backend)
+      const userId = address || 'anonymous';
+      const response = await fetch(`/api/question?userId=${userId}`);
       const data: QuestionResponse = await response.json();
 
       if (data.requiresPayment) {
@@ -81,7 +75,13 @@ export default function PlayPage() {
   };
 
   const handleSubmitAnswer = async () => {
-    if (!selectedAnswer || !questionId || !address || !question) return;
+    if (!selectedAnswer || !questionId || !question) return;
+
+    // Wallet only needed for minting, not for answering
+    if (!address) {
+      setError('Connect wallet to submit answer and mint tokens');
+      return;
+    }
 
     try {
       setIsLoading(true);
@@ -134,28 +134,6 @@ export default function PlayPage() {
       ],
     });
   };
-
-  if (!isConnected) {
-    return (
-      <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-b from-background to-muted/20">
-        <div className="w-full max-w-md space-y-4">
-          <div className="text-center mb-8">
-            <Link href="/" className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground mb-4">
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Back to Home
-            </Link>
-            <h1 className="text-3xl font-bold mt-4">Connect to Play</h1>
-            <p className="text-muted-foreground mt-2">Connect your wallet to start answering questions</p>
-          </div>
-          <Card>
-            <CardContent className="pt-6">
-              <WalletConnect />
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-muted/20">
@@ -333,7 +311,7 @@ export default function PlayPage() {
                     </div>
                   )}
                 </CardContent>
-                <CardFooter>
+                <CardFooter className="flex-col gap-2">
                   <Button
                     onClick={handleSubmitAnswer}
                     disabled={!selectedAnswer || isLoading}
@@ -345,10 +323,17 @@ export default function PlayPage() {
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                         Checking Answer...
                       </>
+                    ) : !isConnected ? (
+                      'Connect Wallet to Submit'
                     ) : (
                       'Submit Answer'
                     )}
                   </Button>
+                  {!isConnected && (
+                    <p className="text-xs text-muted-foreground text-center">
+                      You'll need to connect your wallet to submit answers and mint tokens
+                    </p>
+                  )}
                 </CardFooter>
               </>
             ) : (

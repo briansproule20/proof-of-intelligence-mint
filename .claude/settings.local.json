@@ -20,7 +20,13 @@
       "Bash(node:*)",
       "Bash(cd:*)",
       "WebFetch(domain:sdk.vercel.ai)",
-      "Bash(pkill:*)"
+      "Bash(pkill:*)",
+      "Bash(npm run dev:*)",
+      "Bash(bash -c 'QUESTION=$(curl -s http://localhost:3001/api/question) && echo \"\"$QUESTION\"\" | jq . && QUESTION_ID=$(echo \"\"$QUESTION\"\" | jq -r \"\".id\"\") && curl -s -X POST http://localhost:3001/api/answer/$QUESTION_ID -H \"\"Content-Type: application/json\"\" -d \"\"{\\\"\"answer\\\"\":\\\"\"Paris\\\"\",\\\"\"walletAddress\\\"\":\\\"\"0x1234567890123456789012345678901234567890\\\"\"}\"\" | jq .')",
+      "Bash(bash -c 'QUESTION=$(curl -s http://localhost:3001/api/question) && echo \"\"$QUESTION\"\" | jq . && QUESTION_ID=$(echo \"\"$QUESTION\"\" | jq -r \"\".id\"\") && ANSWER=$(echo \"\"$QUESTION\"\" | jq -r \"\".options[1]\"\") && curl -s -X POST http://localhost:3001/api/answer/$QUESTION_ID -H \"\"Content-Type: application/json\"\" -d \"\"{\\\"\"answer\\\"\":\\\"\"$ANSWER\\\"\",\\\"\"walletAddress\\\"\":\\\"\"0x1234567890123456789012345678901234567890\\\"\"}\"\" | jq .')",
+      "Bash(bash -c 'QUESTION=$(curl -s http://localhost:3001/api/question) && echo \"\"$QUESTION\"\" | jq . && QUESTION_ID=$(echo \"\"$QUESTION\"\" | jq -r \"\".id\"\") && curl -s -X POST http://localhost:3001/api/answer/$QUESTION_ID -H \"\"Content-Type: application/json\"\" -d \"\"{\\\"\"answer\\\"\":\\\"\"Da Vinci\\\"\",\\\"\"walletAddress\\\"\":\\\"\"0x1234567890123456789012345678901234567890\\\"\"}\"\" | jq .')",
+      "Bash(xargs cat:*)",
+      "Bash(xargs:*)"
     ],
     "deny": [],
     "ask": []

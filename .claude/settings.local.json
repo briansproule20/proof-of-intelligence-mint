@@ -26,7 +26,22 @@
       "Bash(bash -c 'QUESTION=$(curl -s http://localhost:3001/api/question) && echo \"\"$QUESTION\"\" | jq . && QUESTION_ID=$(echo \"\"$QUESTION\"\" | jq -r \"\".id\"\") && ANSWER=$(echo \"\"$QUESTION\"\" | jq -r \"\".options[1]\"\") && curl -s -X POST http://localhost:3001/api/answer/$QUESTION_ID -H \"\"Content-Type: application/json\"\" -d \"\"{\\\"\"answer\\\"\":\\\"\"$ANSWER\\\"\",\\\"\"walletAddress\\\"\":\\\"\"0x1234567890123456789012345678901234567890\\\"\"}\"\" | jq .')",
       "Bash(bash -c 'QUESTION=$(curl -s http://localhost:3001/api/question) && echo \"\"$QUESTION\"\" | jq . && QUESTION_ID=$(echo \"\"$QUESTION\"\" | jq -r \"\".id\"\") && curl -s -X POST http://localhost:3001/api/answer/$QUESTION_ID -H \"\"Content-Type: application/json\"\" -d \"\"{\\\"\"answer\\\"\":\\\"\"Da Vinci\\\"\",\\\"\"walletAddress\\\"\":\\\"\"0x1234567890123456789012345678901234567890\\\"\"}\"\" | jq .')",
       "Bash(xargs cat:*)",
-      "Bash(xargs:*)"
+      "Bash(xargs:*)",
+      "Bash(source .env)",
+      "Bash(cast call:*)",
+      "WebSearch",
+      "WebFetch(domain:vercel.com)",
+      "WebFetch(domain:x402.gitbook.io)",
+      "WebFetch(domain:basescan.org)",
+      "Bash(source .env.local)",
+      "WebFetch(domain:www.x402.org)",
+      "Bash(pnpm list:*)",
+      "Bash(source \"/Users/briansproule/Coding Projects/proof-of-intelligence-mint/apps/web/.env.local\")",
+      "Bash(cast tx:*)",
+      "Bash(cast receipt:*)",
+      "Bash(awk:*)",
+      "Bash(cast block:*)",
+      "Bash(killall node:*)"
     ],
     "deny": [],
     "ask": []

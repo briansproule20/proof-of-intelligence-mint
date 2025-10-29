@@ -1,9 +1,9 @@
-import { createX402OpenAI } from '@merit-systems/ai-x402/server';
+import { createX402OpenAI, createX402OpenAIWithoutPayment } from '@merit-systems/ai-x402/server';
 import { CdpClient } from '@coinbase/cdp-sdk';
 import { generateText } from 'ai';
 import type { EchoQuestion } from '@poim/shared';
 import { createWalletClient, custom, http } from 'viem';
-import { baseSepolia } from 'viem/chains';
+import { base } from 'viem/chains';
 import { privateKeyToAccount } from 'viem/accounts';
 
 // CDP Account to Viem WalletClient converter
@@ -71,6 +71,8 @@ export class QuestionGenerator {
   private openai: ReturnType<typeof createX402OpenAI> | null = null;
   private cdpClient: CdpClient | null = null;
   private initialized = false;
+  private failureCount = 0;
+  private readonly MAX_FAILURES = 3; // Circuit breaker: stop after 3 failures
 
   /**
    * Initialize the CDP client and x402 OpenAI provider
@@ -90,8 +92,8 @@ export class QuestionGenerator {
       const account = privateKeyToAccount(privateKey as `0x${string}`);
       const walletClient = createWalletClient({
         account,
-        chain: baseSepolia,
-        transport: http(process.env.NEXT_PUBLIC_BASE_SEPOLIA_RPC_URL),
+        chain: base,
+        transport: http(process.env.NEXT_PUBLIC_BASE_MAINNET_RPC_URL),
       });
 
       // Initialize x402 OpenAI provider
@@ -115,6 +117,14 @@ export class QuestionGenerator {
     userId: string,
     difficulty: 'easy' | 'medium' | 'hard' = 'easy'
   ): Promise<EchoQuestion> {
+    // Circuit breaker: stop after too many failures
+    if (this.failureCount >= this.MAX_FAILURES) {
+      throw new Error(
+        `Circuit breaker activated: ${this.failureCount} consecutive failures. ` +
+        'Please check wallet funds and Echo configuration before retrying.'
+      );
+    }
+
     // Ensure initialized
     if (!this.initialized) {
       await this.initialize();
@@ -155,8 +165,12 @@ Generate the question now:`;
 
     try {
       console.log(`[QuestionGenerator] Generating ${difficulty} question for user ${userId}...`);
+      console.log('[QuestionGenerator] Prompt:', prompt.substring(0, 200) + '...');
 
       // Generate text using x402-powered OpenAI
+      console.log('[QuestionGenerator] Calling generateText with x402 OpenAI...');
+      const startTime = Date.now();
+
       const { text } = await generateText({
         model: this.openai('gpt-4o'),
         prompt,
@@ -164,6 +178,8 @@ Generate the question now:`;
         maxTokens: 500,
       });
 
+      const duration = Date.now() - startTime;
+      console.log(`[QuestionGenerator] generateText completed in ${duration}ms`);
       console.log('[QuestionGenerator] Raw LLM response:', text);
 
       // Parse the JSON response
@@ -186,10 +202,25 @@ Generate the question now:`;
       };
 
       console.log('[QuestionGenerator] Successfully generated question:', question.id);
+
+      // Reset failure count on success
+      this.failureCount = 0;
+
       return question;
     } catch (error) {
-      console.error('[QuestionGenerator] Failed to generate question:', error);
-      throw new Error('Failed to generate question using LLM');
+      // Increment failure count
+      this.failureCount++;
+
+      console.error(`[QuestionGenerator] Failed to generate question (failure #${this.failureCount}):`, error);
+      console.error('[QuestionGenerator] Error details:', {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined,
+        fullError: JSON.stringify(error, null, 2),
+        failureCount: this.failureCount,
+        circuitBreakerWillActivateNext: this.failureCount >= this.MAX_FAILURES
+      });
+
+      throw error instanceof Error ? error : new Error('Failed to generate question using LLM');
     }
   }
 

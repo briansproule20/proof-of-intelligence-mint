@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useAccount, useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
+import { useAccount, useWriteContract, useWaitForTransactionReceipt, useWalletClient } from 'wagmi';
 import Link from 'next/link';
 import { WalletConnect } from '@/components/WalletConnect';
 import { TokenBalance } from '@/components/TokenBalance';
@@ -15,21 +15,20 @@ import { Loader2, CheckCircle2, XCircle, Sparkles, ArrowLeft, ExternalLink } fro
 
 export default function PlayPage() {
   const { address, isConnected } = useAccount();
+  const { data: walletClient } = useWalletClient();
   const [question, setQuestion] = useState<EchoQuestion | null>(null);
   const [questionId, setQuestionId] = useState<string>('');
   const [selectedAnswer, setSelectedAnswer] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string>('');
   const [mintData, setMintData] = useState<AnswerResponse | null>(null);
-  const [requiresPayment, setRequiresPayment] = useState(false);
-  const [paymentInfo, setPaymentInfo] = useState<QuestionResponse | null>(null);
 
   const { writeContract, data: hash, isPending } = useWriteContract();
   const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({
     hash,
   });
 
-  // Fetch question on mount (no wallet needed)
+  // Fetch question when component mounts (no wallet required for questions)
   useEffect(() => {
     fetchQuestion();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -46,21 +45,26 @@ export default function PlayPage() {
 
   const fetchQuestion = async () => {
     try {
+      console.log('[PlayPage] fetchQuestion called, address:', address);
       setIsLoading(true);
       setError('');
-      setRequiresPayment(false);
 
-      // Fetch question from API endpoint (no wallet needed - x402 handles payments on backend)
       const userId = address || 'anonymous';
-      const response = await fetch(`/api/question?userId=${userId}`);
-      const data: QuestionResponse = await response.json();
 
-      if (data.requiresPayment) {
-        setRequiresPayment(true);
-        setPaymentInfo(data);
-        setError(data.message || 'Payment required');
-        return;
+      console.log('[PlayPage] Fetching question from API...');
+
+      // TEMPORARY: Questions are free for users while we debug x402
+      // Backend still pays Echo for AI generation via createX402OpenAI
+      const response = await fetch(`/api/question?userId=${userId}`);
+      console.log('[PlayPage] Response status:', response.status);
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to fetch question');
       }
+
+      const data: QuestionResponse = await response.json();
+      console.log('[PlayPage] Received data:', data);
 
       if (data.question) {
         setQuestion(data.question);
@@ -132,6 +136,7 @@ export default function PlayPage() {
         BigInt(permit.deadline),
         signature as `0x${string}`,
       ],
+      value: BigInt('300000000000000'), // 0.0003 ETH = ~$1 on Base
     });
   };
 
@@ -163,41 +168,27 @@ export default function PlayPage() {
             <CardContent>
               <ul className="space-y-2 text-sm text-muted-foreground">
                 <li className="flex items-start gap-2">
-                  <CheckCircle2 className="h-4 w-4 mt-0.5 text-primary flex-shrink-0" />
-                  <span>Answer correctly to mint 1 POIC</span>
+                  <Sparkles className="h-4 w-4 mt-0.5 text-primary flex-shrink-0" />
+                  <span>Questions are FREE (temporary)</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <CheckCircle2 className="h-4 w-4 mt-0.5 text-primary flex-shrink-0" />
-                  <span>Pay only network gas fees</span>
+                  <span>Answer correctly to unlock mint</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <CheckCircle2 className="h-4 w-4 mt-0.5 text-primary flex-shrink-0" />
-                  <span>Get a new question each round</span>
+                  <span>Pay $1 to mint POIC token</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <CheckCircle2 className="h-4 w-4 mt-0.5 text-primary flex-shrink-0" />
+                  <span>100k max supply → AMM liquidity</span>
                 </li>
               </ul>
             </CardContent>
           </Card>
         </div>
 
-        {/* Payment Required State */}
-        {requiresPayment && paymentInfo && paymentInfo.requiresPayment ? (
-          <Card className="border-primary/50">
-            <CardHeader>
-              <CardTitle>Payment Required</CardTitle>
-              <CardDescription>{paymentInfo.message}</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground">
-                To continue playing, you need to mint POIC tokens. The mint fee serves as payment for accessing questions.
-              </p>
-            </CardContent>
-            <CardFooter>
-              <Button onClick={fetchQuestion} className="w-full">
-                I've Made Payment - Continue
-              </Button>
-            </CardFooter>
-          </Card>
-        ) : mintData && mintData.correct ? (
+        {mintData && mintData.correct ? (
           /* Success State */
           <Card className="border-2 border-green-500/50 bg-gradient-to-br from-green-50 to-green-100/50 dark:from-green-950/20 dark:to-green-900/10">
             <CardHeader>
@@ -218,7 +209,7 @@ export default function PlayPage() {
                 <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50 text-sm">
                   <span className="text-muted-foreground">Transaction</span>
                   <a
-                    href={`https://sepolia.basescan.org/tx/${hash}`}
+                    href={`https://basescan.org/tx/${hash}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex items-center gap-1 text-primary hover:underline"
@@ -340,10 +331,18 @@ export default function PlayPage() {
               <CardContent className="py-16">
                 <div className="flex flex-col items-center gap-4">
                   <XCircle className="h-12 w-12 text-destructive" />
-                  <p className="text-destructive font-medium">Failed to load question</p>
-                  <Button onClick={fetchQuestion} variant="outline">
-                    Try Again
-                  </Button>
+                  <p className="text-destructive font-medium">
+                    {error || 'Failed to load question'}
+                  </p>
+                  {!isConnected ? (
+                    <p className="text-sm text-muted-foreground text-center">
+                      Connect your wallet to get questions
+                    </p>
+                  ) : (
+                    <Button onClick={fetchQuestion} variant="outline" disabled={isLoading}>
+                      {isLoading ? 'Loading...' : 'Get Question'}
+                    </Button>
+                  )}
                 </div>
               </CardContent>
             )}

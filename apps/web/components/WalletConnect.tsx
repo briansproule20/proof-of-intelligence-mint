@@ -25,6 +25,12 @@ export function WalletConnect() {
     address: address,
   });
 
+  // Get USDC balance (Base mainnet)
+  const { data: usdcBalance } = useBalance({
+    address: address,
+    token: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913' as `0x${string}`,
+  });
+
   // Get POIC token balance
   const { data: poicBalance } = useBalance({
     address: address,
@@ -98,6 +104,17 @@ export function WalletConnect() {
                   </div>
                   <span className="text-sm font-mono">
                     {ethBalance ? parseFloat(formatUnits(ethBalance.value, ethBalance.decimals)).toFixed(4) : '0.0000'}
+                  </span>
+                </div>
+
+                {/* USDC Balance */}
+                <div className="flex items-center justify-between px-3 py-2 bg-green-500/10 rounded-lg border border-green-500/20">
+                  <div className="flex items-center gap-2">
+                    <Coins className="h-4 w-4 text-green-600 dark:text-green-400" />
+                    <span className="text-sm font-medium text-green-700 dark:text-green-400">USDC</span>
+                  </div>
+                  <span className="text-sm font-mono text-green-700 dark:text-green-400">
+                    {usdcBalance ? parseFloat(formatUnits(usdcBalance.value, 6)).toFixed(2) : '0.00'}
                   </span>
                 </div>
 

@@ -71,15 +71,19 @@ class QuestionCache {
   }
 }
 
-// Singleton instance
-let questionCache: QuestionCache | null = null;
+// Singleton instance - use globalThis to persist across hot reloads in dev
+const globalForCache = globalThis as unknown as {
+  questionCache: QuestionCache | undefined;
+};
 
 /**
  * Get the singleton question cache instance
+ * Uses globalThis to survive Next.js hot reloads in development
  */
 export function getQuestionCache(): QuestionCache {
-  if (!questionCache) {
-    questionCache = new QuestionCache();
+  if (!globalForCache.questionCache) {
+    globalForCache.questionCache = new QuestionCache();
+    console.log('[QuestionCache] Created new cache instance');
   }
-  return questionCache;
+  return globalForCache.questionCache;
 }

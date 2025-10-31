@@ -6,6 +6,7 @@ import {
 } from '@poim/shared';
 import { mintTokens, forwardUsdcToContract } from '@/lib/server-wallet';
 import { echoClient } from '@/lib/echo';
+import { keccak256, toBytes } from 'viem';
 
 /**
  * POST /api/answer/:id
@@ -33,12 +34,13 @@ export async function POST(
       );
     }
 
-    // Extract x402 payment transaction hash from headers
+    // Generate unique bytes32 identifier from questionId + walletAddress
+    // This ensures each user can only mint once per question (idempotency)
     const paymentTxHash = request.headers.get('x-payment-tx-hash') ||
                          request.headers.get('x-transaction-hash') ||
-                         `0x${Buffer.from(`${questionId}-${walletAddress}-${Date.now()}`).toString('hex').padStart(64, '0')}`;
+                         keccak256(toBytes(`${questionId}-${walletAddress}`));
 
-    console.log('[API Answer] Payment tx hash:', paymentTxHash);
+    console.log('[API Answer] Idempotency key (bytes32):', paymentTxHash);
 
     // Verify answer via Echo client
     const isCorrect = await echoClient.verifyAnswer({

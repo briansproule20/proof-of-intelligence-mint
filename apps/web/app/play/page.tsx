@@ -146,15 +146,15 @@ export default function PlayPage() {
                 </li>
                 <li className="flex items-start gap-2">
                   <CheckCircle2 className="h-4 w-4 mt-0.5 text-primary flex-shrink-0" />
-                  <span>Requires 1 USDC payment per mint</span>
+                  <span>Pay 1 USDC per correct answer (via x402)</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <CheckCircle2 className="h-4 w-4 mt-0.5 text-primary flex-shrink-0" />
-                  <span>Server-side minting (no wallet approval)</span>
+                  <span>USDC collected for Uniswap V4 LP pool</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <CheckCircle2 className="h-4 w-4 mt-0.5 text-primary flex-shrink-0" />
-                  <span>100k max supply → Auto Uniswap V4 LP</span>
+                  <span>100k mints → Auto LP creation</span>
                 </li>
               </ul>
             </CardContent>

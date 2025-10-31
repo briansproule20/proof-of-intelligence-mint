@@ -4,14 +4,14 @@ import {
   AnswerResponse,
   MINT_AMOUNT,
 } from '@poim/shared';
-import { mintTokens } from '@/lib/server-wallet';
+import { mintTokens, forwardUsdcToContract } from '@/lib/server-wallet';
 import { echoClient } from '@/lib/echo';
 
 /**
  * POST /api/answer/:id
  *
- * Submit an answer to a question
- * Verifies answer via Echo client and mints tokens server-side
+ * Submit an answer to a question with x402 payment
+ * Flow: User pays 1 USDC → Verify answer → Mint tokens → Forward USDC to contract
  */
 export async function POST(
   request: NextRequest,
@@ -33,6 +33,13 @@ export async function POST(
       );
     }
 
+    // Extract x402 payment transaction hash from headers
+    const paymentTxHash = request.headers.get('x-payment-tx-hash') ||
+                         request.headers.get('x-transaction-hash') ||
+                         `0x${Buffer.from(`${questionId}-${walletAddress}-${Date.now()}`).toString('hex').padStart(64, '0')}`;
+
+    console.log('[API Answer] Payment tx hash:', paymentTxHash);
+
     // Verify answer via Echo client
     const isCorrect = await echoClient.verifyAnswer({
       questionId,
@@ -46,30 +53,34 @@ export async function POST(
       } as AnswerResponse);
     }
 
-    // Get payment tx hash from x402 header for idempotency
-    // In the interim, we'll use questionId + walletAddress as a unique identifier
-    const paymentTxHash = `0x${Buffer.from(`${questionId}-${walletAddress}`).toString('hex').padStart(64, '0')}`;
-
-    // Mint tokens server-side
+    // Answer is correct - mint tokens and forward USDC
     try {
-      const txHash = await mintTokens(walletAddress, paymentTxHash);
+      // 1. Mint tokens to user (using payment tx hash for idempotency)
+      const mintTxHash = await mintTokens(walletAddress, paymentTxHash);
+      console.log('[API Answer] Minted tokens, tx:', mintTxHash);
+
+      // 2. Forward 1 USDC to POIC contract for LP pool
+      const forwardTxHash = await forwardUsdcToContract();
+      console.log('[API Answer] Forwarded USDC to contract, tx:', forwardTxHash);
 
       return NextResponse.json({
         correct: true,
-        message: 'Tokens minted successfully!',
-        txHash,
+        message: 'Tokens minted successfully! USDC forwarded to LP pool.',
+        txHash: mintTxHash,
+        usdcTxHash: forwardTxHash,
       } as AnswerResponse);
-    } catch (mintError) {
-      console.error('Error minting tokens:', mintError);
+    } catch (error) {
+      console.error('[API Answer] Error minting/forwarding:', error);
 
-      // Still return correct answer, but note minting failed
+      // Still return correct answer, but note operation failed
       return NextResponse.json({
         correct: true,
-        message: 'Answer correct, but token minting failed. Please contact support.',
+        message: 'Answer correct, but minting failed. Please contact support.',
+        error: error instanceof Error ? error.message : 'Unknown error',
       } as AnswerResponse);
     }
   } catch (error) {
-    console.error('Error verifying answer:', error);
+    console.error('[API Answer] Error:', error);
     return NextResponse.json(
       {
         correct: false,

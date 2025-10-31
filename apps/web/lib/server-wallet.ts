@@ -1,7 +1,8 @@
-import { createWalletClient, http, parseAbi } from 'viem';
+import { createWalletClient, http, parseAbi, parseUnits } from 'viem';
 import { base } from 'viem/chains';
 import { privateKeyToAccount } from 'viem/accounts';
 import { CONTRACT_ADDRESS } from './contract';
+import { USDC_ADDRESS_BASE, PAYMENT_AMOUNT } from '@poim/shared';
 
 // Server wallet for minting tokens
 const privateKey = process.env.SERVER_WALLET_PRIVATE_KEY;
@@ -24,6 +25,34 @@ const walletClient = createWalletClient({
 const BATCH_MINT_ABI = parseAbi([
   'function batchMint(address[] calldata to, bytes32[] calldata txHashes) external',
 ]);
+
+// ABI for USDC transfer
+const ERC20_ABI = parseAbi([
+  'function transfer(address to, uint256 amount) external returns (bool)',
+  'function balanceOf(address account) external view returns (uint256)',
+]);
+
+/**
+ * Transfer USDC to the POIC contract
+ * @param amount Amount in USDC (with 6 decimals)
+ * @returns Transaction hash
+ */
+export async function forwardUsdcToContract(amount: string = PAYMENT_AMOUNT): Promise<string> {
+  try {
+    const hash = await walletClient.writeContract({
+      address: USDC_ADDRESS_BASE as `0x${string}`,
+      abi: ERC20_ABI,
+      functionName: 'transfer',
+      args: [CONTRACT_ADDRESS, BigInt(amount)],
+    });
+
+    console.log(`[Server Wallet] Forwarded ${amount} USDC to contract, tx: ${hash}`);
+    return hash;
+  } catch (error) {
+    console.error('[Server Wallet] Failed to forward USDC:', error);
+    throw new Error('Failed to forward USDC to contract');
+  }
+}
 
 /**
  * Mint tokens to a user via server-side transaction
@@ -48,10 +77,6 @@ export async function mintTokens(
     });
 
     console.log(`[Server Wallet] Minted tokens to ${walletAddress}, tx: ${hash}`);
-
-    // Wait for transaction confirmation
-    // Note: In production, you might want to handle this asynchronously
-    // or return the hash immediately and confirm later
 
     return hash;
   } catch (error) {

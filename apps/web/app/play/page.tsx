@@ -21,6 +21,15 @@ export default function PlayPage() {
   const [error, setError] = useState<string>('');
   const [successData, setSuccessData] = useState<{ message: string; txHash?: string } | null>(null);
 
+  const loadNextQuestion = () => {
+    setSuccessData(null);
+    setError('');
+    setSelectedAnswer('');
+    setQuestion(null); // Clear current question to show loader
+    setQuestionId('');
+    fetchQuestion();
+  };
+
   // Fetch question when component mounts (no wallet required for questions)
   useEffect(() => {
     fetchQuestion();
@@ -91,19 +100,8 @@ export default function PlayPage() {
           message: data.message || 'Tokens minted to your wallet!',
           txHash: data.txHash,
         });
-        // Fetch new question after short delay
-        setTimeout(() => {
-          setSuccessData(null);
-          setSelectedAnswer('');
-          fetchQuestion();
-        }, 3000);
       } else {
         setError(data.message || 'Incorrect answer. Try again!');
-        // Fetch new question after wrong answer
-        setTimeout(() => {
-          setSelectedAnswer('');
-          fetchQuestion();
-        }, 2000);
       }
     } catch (err) {
       setError('Failed to verify answer');
@@ -142,11 +140,11 @@ export default function PlayPage() {
               <ul className="space-y-2 text-sm text-muted-foreground">
                 <li className="flex items-start gap-2">
                   <Sparkles className="h-4 w-4 mt-0.5 text-primary flex-shrink-0" />
-                  <span>Answer correctly to earn 5000 POIC</span>
+                  <span>Pay 1 USDC per question (via x402)</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <CheckCircle2 className="h-4 w-4 mt-0.5 text-primary flex-shrink-0" />
-                  <span>Pay 1 USDC per correct answer (via x402)</span>
+                  <span>Answer correctly to earn 5000 POIC</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <CheckCircle2 className="h-4 w-4 mt-0.5 text-primary flex-shrink-0" />
@@ -193,10 +191,23 @@ export default function PlayPage() {
                 </div>
               )}
             </CardContent>
-            <CardFooter>
-              <div className="w-full text-center text-sm text-muted-foreground">
-                Loading next question...
-              </div>
+            <CardFooter className="flex gap-3">
+              <Button
+                onClick={loadNextQuestion}
+                variant="default"
+                className="flex-1"
+              >
+                Load Next Question
+              </Button>
+              {address && (
+                <Button
+                  onClick={() => window.open(`https://basescan.org/address/${address}`, '_blank')}
+                  variant="outline"
+                  className="flex-1"
+                >
+                  View Wallet
+                </Button>
+              )}
             </CardFooter>
           </Card>
         ) : (
@@ -249,34 +260,48 @@ export default function PlayPage() {
                   </RadioGroup>
 
                   {error && (
-                    <div className="flex items-center gap-2 p-3 rounded-lg bg-destructive/10 text-destructive border border-destructive/20">
-                      <XCircle className="h-5 w-5 flex-shrink-0" />
-                      <span className="text-sm">{error}</span>
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-2 p-3 rounded-lg bg-destructive/10 text-destructive border border-destructive/20">
+                        <XCircle className="h-5 w-5 flex-shrink-0" />
+                        <span className="text-sm">{error}</span>
+                      </div>
+                      <Button
+                        onClick={loadNextQuestion}
+                        variant="outline"
+                        size="lg"
+                        className="w-full"
+                      >
+                        Try Next Question
+                      </Button>
                     </div>
                   )}
                 </CardContent>
                 <CardFooter className="flex-col gap-2">
-                  <Button
-                    onClick={handleSubmitAnswer}
-                    disabled={!selectedAnswer || isLoading}
-                    size="lg"
-                    className="w-full"
-                  >
-                    {isLoading ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Checking Answer...
-                      </>
-                    ) : !isConnected ? (
-                      'Connect Wallet to Submit'
-                    ) : (
-                      'Submit Answer'
-                    )}
-                  </Button>
-                  {!isConnected && (
-                    <p className="text-xs text-muted-foreground text-center">
-                      You'll need to connect your wallet to submit answers and mint tokens
-                    </p>
+                  {!error && (
+                    <>
+                      <Button
+                        onClick={handleSubmitAnswer}
+                        disabled={!selectedAnswer || isLoading}
+                        size="lg"
+                        className="w-full"
+                      >
+                        {isLoading ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            Checking Answer...
+                          </>
+                        ) : !isConnected ? (
+                          'Connect Wallet to Submit'
+                        ) : (
+                          'Submit Answer'
+                        )}
+                      </Button>
+                      {!isConnected && (
+                        <p className="text-xs text-muted-foreground text-center">
+                          You'll need to connect your wallet to submit answers and mint tokens
+                        </p>
+                      )}
+                    </>
                   )}
                 </CardFooter>
               </>

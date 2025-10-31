@@ -47,3 +47,6 @@ packages/contracts/lib/
 
 # Debug
 *.pem
+
+# Claude settings (may contain secrets)
+.claude/settings.local.json

@@ -4,15 +4,14 @@ import {
   AnswerResponse,
   MINT_AMOUNT,
 } from '@poim/shared';
-import { generateMintSignature, getNextNonce } from '@/lib/signature';
-import { CONTRACT_ADDRESS, CHAIN_ID } from '@/lib/contract';
+import { mintTokens } from '@/lib/server-wallet';
 import { echoClient } from '@/lib/echo';
 
 /**
  * POST /api/answer/:id
  *
  * Submit an answer to a question
- * Verifies answer via Echo client
+ * Verifies answer via Echo client and mints tokens server-side
  */
 export async function POST(
   request: NextRequest,
@@ -47,25 +46,28 @@ export async function POST(
       } as AnswerResponse);
     }
 
-    // Generate mint signature for correct answer
-    const nonce = getNextNonce(walletAddress);
-    const amount = BigInt(MINT_AMOUNT);
+    // Get payment tx hash from x402 header for idempotency
+    // In the interim, we'll use questionId + walletAddress as a unique identifier
+    const paymentTxHash = `0x${Buffer.from(`${questionId}-${walletAddress}`).toString('hex').padStart(64, '0')}`;
 
-    const { signature, permit } = await generateMintSignature(
-      walletAddress as `0x${string}`,
-      amount,
-      nonce,
-      CONTRACT_ADDRESS,
-      CHAIN_ID
-    );
+    // Mint tokens server-side
+    try {
+      const txHash = await mintTokens(walletAddress, paymentTxHash);
 
-    return NextResponse.json({
-      correct: true,
-      mintSignature: {
-        signature,
-        permit,
-      },
-    } as AnswerResponse);
+      return NextResponse.json({
+        correct: true,
+        message: 'Tokens minted successfully!',
+        txHash,
+      } as AnswerResponse);
+    } catch (mintError) {
+      console.error('Error minting tokens:', mintError);
+
+      // Still return correct answer, but note minting failed
+      return NextResponse.json({
+        correct: true,
+        message: 'Answer correct, but token minting failed. Please contact support.',
+      } as AnswerResponse);
+    }
   } catch (error) {
     console.error('Error verifying answer:', error);
     return NextResponse.json(

@@ -1,33 +1,36 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
-import "forge-std/Script.sol";
-import "../src/POIC.sol";
+// DEPRECATED: This deploy script is for the old POIC v1/v2 contract
+// Use DeployPOICv3.s.sol for the new POIC v3 contract
 
-/**
- * @title DeployScript
- * @notice Deployment script for POIC token
- * @dev Run with: forge script script/Deploy.s.sol:DeployScript --rpc-url <RPC_URL> --broadcast
- */
-contract DeployScript is Script {
-    function run() external {
-        // Read the mint signer address from environment variable
-        address mintSigner = vm.envAddress("MINT_SIGNER_ADDRESS");
+// import "forge-std/Script.sol";
+// import "../src/POIC.sol";
 
-        // Get the deployer private key
-        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
+// /**
+//  * @title DeployScript
+//  * @notice Deployment script for POIC token
+//  * @dev Run with: forge script script/Deploy.s.sol:DeployScript --rpc-url <RPC_URL> --broadcast
+//  */
+// contract DeployScript is Script {
+//     function run() external {
+//         // Read the mint signer address from environment variable
+//         address mintSigner = vm.envAddress("MINT_SIGNER_ADDRESS");
 
-        vm.startBroadcast(deployerPrivateKey);
+//         // Get the deployer private key
+//         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
 
-        // Deploy POIC contract
-        POIC poic = new POIC(mintSigner);
+//         vm.startBroadcast(deployerPrivateKey);
 
-        console.log("POIC deployed to:", address(poic));
-        console.log("Mint signer set to:", mintSigner);
-        console.log("Owner:", poic.owner());
-        console.log("Token name:", poic.name());
-        console.log("Token symbol:", poic.symbol());
+//         // Deploy POIC contract
+//         POIC poic = new POIC(mintSigner);
 
-        vm.stopBroadcast();
-    }
-}
+//         console.log("POIC deployed to:", address(poic));
+//         console.log("Mint signer set to:", mintSigner);
+//         console.log("Owner:", poic.owner());
+//         console.log("Token name:", poic.name());
+//         console.log("Token symbol:", poic.symbol());
+
+//         vm.stopBroadcast();
+//     }
+// }

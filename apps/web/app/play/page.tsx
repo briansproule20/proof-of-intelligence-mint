@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useAccount, useWriteContract, useWaitForTransactionReceipt, useWalletClient } from 'wagmi';
+import { useAccount } from 'wagmi';
 import Link from 'next/link';
 import { WalletConnect } from '@/components/WalletConnect';
 import { TokenBalance } from '@/components/TokenBalance';
@@ -10,38 +10,22 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter }
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { QuestionResponse, AnswerResponse, EchoQuestion } from '@poim/shared';
-import { POIC_ABI, CONTRACT_ADDRESS } from '@/lib/contract';
 import { Loader2, CheckCircle2, XCircle, Sparkles, ArrowLeft, ExternalLink } from 'lucide-react';
 
 export default function PlayPage() {
   const { address, isConnected } = useAccount();
-  const { data: walletClient } = useWalletClient();
   const [question, setQuestion] = useState<EchoQuestion | null>(null);
   const [questionId, setQuestionId] = useState<string>('');
   const [selectedAnswer, setSelectedAnswer] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string>('');
-  const [mintData, setMintData] = useState<AnswerResponse | null>(null);
-
-  const { writeContract, data: hash, isPending } = useWriteContract();
-  const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({
-    hash,
-  });
+  const [successData, setSuccessData] = useState<{ message: string; txHash?: string } | null>(null);
 
   // Fetch question when component mounts (no wallet required for questions)
   useEffect(() => {
     fetchQuestion();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  // Reset when transaction succeeds
-  useEffect(() => {
-    if (isSuccess) {
-      setMintData(null);
-      setSelectedAnswer('');
-      fetchQuestion();
-    }
-  }, [isSuccess]);
 
   const fetchQuestion = async () => {
     try {
@@ -103,7 +87,16 @@ export default function PlayPage() {
       const data: AnswerResponse = await response.json();
 
       if (data.correct) {
-        setMintData(data);
+        setSuccessData({
+          message: data.message || 'Tokens minted to your wallet!',
+          txHash: data.txHash,
+        });
+        // Fetch new question after short delay
+        setTimeout(() => {
+          setSuccessData(null);
+          setSelectedAnswer('');
+          fetchQuestion();
+        }, 3000);
       } else {
         setError(data.message || 'Incorrect answer. Try again!');
         // Fetch new question after wrong answer
@@ -118,26 +111,6 @@ export default function PlayPage() {
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const handleMint = () => {
-    if (!mintData || !mintData.correct) return;
-
-    const { permit, signature } = mintData.mintSignature;
-
-    writeContract({
-      address: CONTRACT_ADDRESS,
-      abi: POIC_ABI,
-      functionName: 'mintWithSig',
-      args: [
-        permit.to as `0x${string}`,
-        BigInt(permit.amount),
-        BigInt(permit.nonce),
-        BigInt(permit.deadline),
-        signature as `0x${string}`,
-      ],
-      value: BigInt('300000000000000'), // 0.0003 ETH = ~$1 on Base
-    });
   };
 
   return (
@@ -169,26 +142,26 @@ export default function PlayPage() {
               <ul className="space-y-2 text-sm text-muted-foreground">
                 <li className="flex items-start gap-2">
                   <Sparkles className="h-4 w-4 mt-0.5 text-primary flex-shrink-0" />
-                  <span>Questions are FREE (temporary)</span>
+                  <span>Answer correctly to earn 5000 POIC</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <CheckCircle2 className="h-4 w-4 mt-0.5 text-primary flex-shrink-0" />
-                  <span>Answer correctly to unlock mint</span>
+                  <span>Requires 1 USDC payment per mint</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <CheckCircle2 className="h-4 w-4 mt-0.5 text-primary flex-shrink-0" />
-                  <span>Pay $1 to mint POIC token</span>
+                  <span>Server-side minting (no wallet approval)</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <CheckCircle2 className="h-4 w-4 mt-0.5 text-primary flex-shrink-0" />
-                  <span>100k max supply → AMM liquidity</span>
+                  <span>100k max supply → Auto Uniswap V4 LP</span>
                 </li>
               </ul>
             </CardContent>
           </Card>
         </div>
 
-        {mintData && mintData.correct ? (
+        {successData ? (
           /* Success State */
           <Card className="border-2 border-green-500/50 bg-gradient-to-br from-green-50 to-green-100/50 dark:from-green-950/20 dark:to-green-900/10">
             <CardHeader>
@@ -197,19 +170,19 @@ export default function PlayPage() {
                 Correct Answer!
               </CardTitle>
               <CardDescription className="text-green-600 dark:text-green-500">
-                You've earned the right to mint 1 POIC token
+                {successData.message}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="p-4 rounded-lg bg-background/50 border">
                 <div className="text-sm text-muted-foreground mb-1">Token Amount</div>
-                <div className="text-2xl font-bold">1 POIC</div>
+                <div className="text-2xl font-bold">5000 POIC</div>
               </div>
-              {hash && (
+              {successData.txHash && (
                 <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50 text-sm">
                   <span className="text-muted-foreground">Transaction</span>
                   <a
-                    href={`https://basescan.org/tx/${hash}`}
+                    href={`https://basescan.org/tx/${successData.txHash}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex items-center gap-1 text-primary hover:underline"
@@ -221,29 +194,9 @@ export default function PlayPage() {
               )}
             </CardContent>
             <CardFooter>
-              <Button
-                onClick={handleMint}
-                disabled={isPending || isConfirming}
-                size="lg"
-                className="w-full"
-              >
-                {isPending ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Approve in Wallet...
-                  </>
-                ) : isConfirming ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Minting Token...
-                  </>
-                ) : (
-                  <>
-                    <Sparkles className="mr-2 h-4 w-4" />
-                    Mint Token
-                  </>
-                )}
-              </Button>
+              <div className="w-full text-center text-sm text-muted-foreground">
+                Loading next question...
+              </div>
             </CardFooter>
           </Card>
         ) : (

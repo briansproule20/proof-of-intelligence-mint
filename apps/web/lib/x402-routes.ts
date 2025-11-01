@@ -32,10 +32,6 @@ export const x402RoutesConfig: RoutesConfig = {
     network: 'base',
     config: {
       description: routeDescriptions['/api/x402/question'],
-      inputSchema: {
-        method: 'GET',
-        query: zodToJsonSchema(questionInputSchema),
-      },
       outputSchema: zodToJsonSchema(questionResponseSchema),
       discoverable: true,
     },

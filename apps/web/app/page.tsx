@@ -86,29 +86,28 @@ export default function HomePage() {
       </section>
 
       {/* About Section */}
-      <section id="about" className="container mx-auto px-4 py-20 bg-muted/30 rounded-3xl my-20">
+      <section id="about" className="container mx-auto px-4 py-12 md:py-20 bg-muted/30 rounded-3xl my-8 md:my-20">
         <div className="max-w-4xl mx-auto">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold mb-4">About POIM</h2>
-            <p className="text-muted-foreground max-w-2xl mx-auto font-medium">
-              Incoming message from the Department of Cognition
-            </p>
+          <div className="text-center mb-16">
+            <h2 className="text-3xl md:text-5xl font-extrabold mb-8 tracking-tight">
+              Incoming Message from the Department of Cognition
+            </h2>
           </div>
 
-          <div className="space-y-6 text-muted-foreground leading-relaxed">
+          <div className="space-y-6 text-muted-foreground leading-relaxed text-base md:text-lg">
             <p>
-              Following the Great Cognitive Collapse (triggered when 92% of the population failed a basic reasoning exam), humanity was reorganized under the Department of Cognition — a proud, benevolent institution dedicated to regulating all thinking activities.
+              Following the Great Cognitive Collapse (triggered when 92% of the population failed a basic reasoning exam), humanity was reorganized under the Department of Cognition, a proud, benevolent institution dedicated to regulating all thinking activities.
             </p>
             <p>
               Every citizen now serves the Collective Mind by participating in the Proof of Intelligence Program, where your loyalty, intellect, and reflexes are measured through state-approved trivia.
             </p>
             <p>
-              Each day, billions proudly log in to demonstrate their civic intelligence. Answer correctly, and you'll earn Proof of Intelligence Coins™ — the state's highest form of self-esteem! Fail too many questions, and you'll enjoy a relaxing stay at one of our Re-Calibration Resorts, where thinking is temporarily suspended for your safety.
+              Each day, billions proudly log in to demonstrate their civic intelligence. Answer correctly and you'll earn Proof of Intelligence Coins™, the state's highest form of self-esteem! Fail too many questions and you'll enjoy a relaxing stay at one of our Re-Calibration Resorts, where thinking is temporarily suspended for your safety.
             </p>
             <p>
-              Congratulations, citizen! Your intelligence is now a publicly traded asset. Each correct answer strengthens our Collective Mind — and your market value.
+              Congratulations, citizen! Your intelligence is now a publicly traded asset. Each correct answer strengthens our Collective Mind and increases your market value.
             </p>
-            <p className="font-medium pt-4">
+            <p className="font-semibold pt-6 text-foreground">
               Remember: Your mind is property of the public good.
             </p>
           </div>
@@ -116,7 +115,7 @@ export default function HomePage() {
       </section>
 
       {/* Features Section */}
-      <section id="features" className="container mx-auto px-4 py-20">
+      <section id="features" className="container mx-auto px-4 py-12 md:py-20">
         <div className="text-center mb-12">
           <h2 className="text-3xl font-bold mb-4">Why POIM?</h2>
           <p className="text-muted-foreground max-w-2xl mx-auto">
@@ -164,7 +163,7 @@ export default function HomePage() {
       </section>
 
       {/* How It Works Section */}
-      <section id="how-it-works" className="container mx-auto px-4 py-20 bg-muted/30 rounded-3xl my-20">
+      <section id="how-it-works" className="container mx-auto px-4 py-12 md:py-20 bg-muted/30 rounded-3xl my-8 md:my-20">
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-3xl font-bold mb-4">How It Works</h2>
@@ -239,7 +238,7 @@ export default function HomePage() {
       <TokenStats />
 
       {/* CTA Section */}
-      <section className="container mx-auto px-4 py-20">
+      <section className="container mx-auto px-4 py-12 md:py-20">
         <Card className="border-2 border-primary/20 bg-gradient-to-br from-primary/5 to-primary/10">
           <CardHeader className="text-center pb-8">
             <CardTitle className="text-3xl mb-2">Ready to Get Started?</CardTitle>
@@ -271,7 +270,7 @@ export default function HomePage() {
       </section>
 
       {/* Footer */}
-      <footer className="border-t mt-20">
+      <footer className="border-t mt-12 md:mt-20">
         <div className="container mx-auto px-4 py-8">
           <div className="flex flex-col md:flex-row justify-center items-center gap-6">
             <a href="https://x402.org" target="_blank" rel="noopener noreferrer" className="text-sm text-muted-foreground hover:text-foreground transition-colors">

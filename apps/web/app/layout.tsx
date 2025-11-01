@@ -7,7 +7,23 @@ const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
   title: 'Proof of Intelligence Mint',
-  description: 'Answer trivia questions and mint POIC tokens',
+  description: 'Answer AI-powered trivia questions on Base. Pay 1 USDC per question via x402, mint 5000 POIC tokens for correct answers.',
+  icons: {
+    icon: '/poic-favicon.png',
+    apple: '/poic-favicon.png',
+  },
+  openGraph: {
+    title: 'Proof of Intelligence Mint',
+    description: 'Prove Your Intelligence, Mint Rewards. Answer AI-powered trivia questions and earn POIC tokens on Base.',
+    images: ['/poic-favicon.png'],
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Proof of Intelligence Mint',
+    description: 'Prove Your Intelligence, Mint Rewards. Answer AI-powered trivia questions and earn POIC tokens on Base.',
+    images: ['/poic-favicon.png'],
+  },
 };
 
 export default function RootLayout({

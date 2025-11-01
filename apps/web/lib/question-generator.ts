@@ -110,7 +110,7 @@ export class QuestionGenerator {
   }
 
   /**
-   * Generate a trivia question using GPT-4o via x402
+   * Generate a trivia question using Claude Sonnet 4.5 via x402
    */
   async generateQuestion(
     userId: string,
@@ -174,7 +174,7 @@ Return only the question data in this format:
       const startTime = Date.now();
 
       const { text } = await generateText({
-        model: this.openai('gpt-4o'),
+        model: this.openai('claude-sonnet-4-5-20250929'),
         prompt,
         temperature: 0.8, // Add some creativity
         maxOutputTokens: 500,

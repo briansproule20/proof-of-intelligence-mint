@@ -78,7 +78,7 @@ Return only the question data in this format:
 
     // Generate text using x402 - user's wallet will sign payment
     const { text } = await generateText({
-      model: openai('gpt-4o'),
+      model: openai('claude-sonnet-4-5-20250929'),
       prompt,
       temperature: 0.8,
       maxOutputTokens: 500,

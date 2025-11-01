@@ -2,7 +2,7 @@
 
 ## Overview
 
-Your Proof of Intelligence app now uses **GPT-4o via the x402 payment protocol** to generate trivia questions dynamically. This replaces the hardcoded mock questions with real AI-generated content.
+Your Proof of Intelligence app now uses **Claude Sonnet 4.5 via the x402 payment protocol** to generate trivia questions dynamically. This replaces the hardcoded mock questions with real AI-generated content.
 
 ## What Was Implemented
 
@@ -55,7 +55,7 @@ echoClient.getQuestion(userId, difficulty)
     ↓
 QuestionGenerator initializes CDP wallet
     ↓
-Generates prompt for GPT-4o
+Generates prompt for Claude Sonnet 4.5
     ↓
 x402 SDK makes HTTP 402 request
     ↓
@@ -63,7 +63,7 @@ CDP wallet signs payment
     ↓
 Request retried with payment signature
     ↓
-GPT-4o generates question JSON
+Claude Sonnet 4.5 generates question JSON
     ↓
 Parse & validate response
     ↓
@@ -148,14 +148,14 @@ const question = await echoClient.getQuestion(userId, 'medium'); // or 'hard'
 
 ### LLM Model
 
-Currently configured to use **GPT-4o**. To change the model, edit `apps/web/lib/question-generator.ts:130`:
+Currently configured to use **Claude Sonnet 4.5**. To change the model, edit `apps/web/lib/question-generator.ts:177`:
 
 ```typescript
 const { text } = await generateText({
-  model: this.openai('gpt-4o-mini'), // Change to gpt-4o-mini or gpt-3.5-turbo
+  model: this.openai('claude-sonnet-4-5-20250929'), // Change to other Claude models
   prompt,
   temperature: 0.8,
-  maxTokens: 500,
+  maxOutputTokens: 500,
 });
 ```
 
@@ -169,12 +169,12 @@ private readonly TTL = 10 * 60 * 1000; // 10 minutes in milliseconds
 
 ## Cost Estimates
 
-With GPT-4o:
+With Claude Sonnet 4.5:
 - ~$0.001 - $0.005 per question
 - 1000 questions ≈ $5-20 USD
 - Payments automatically deducted from CDP wallet
 
-**Note:** x402 adds a small routing fee on top of OpenAI's pricing.
+**Note:** x402 adds a small routing fee on top of Anthropic's pricing.
 
 ## Security Considerations
 

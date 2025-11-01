@@ -20,11 +20,17 @@ export default function HomePage() {
             <span className="font-bold text-xl">POIM</span>
           </div>
           <nav className="flex items-center gap-6">
+            <Link href="#about" className="hidden md:block text-sm text-muted-foreground hover:text-foreground transition-colors">
+              About
+            </Link>
             <Link href="#features" className="hidden md:block text-sm text-muted-foreground hover:text-foreground transition-colors">
               Features
             </Link>
             <Link href="#how-it-works" className="hidden md:block text-sm text-muted-foreground hover:text-foreground transition-colors">
               How It Works
+            </Link>
+            <Link href="#stats" className="hidden md:block text-sm text-muted-foreground hover:text-foreground transition-colors">
+              POI Coin Stats
             </Link>
             <WalletConnect />
             <Button asChild={isConnected} size="sm" className="hidden md:flex" disabled={!isConnected}>
@@ -75,6 +81,30 @@ export default function HomePage() {
             <Button asChild size="lg" variant="outline">
               <Link href="#how-it-works">Learn More</Link>
             </Button>
+          </div>
+        </div>
+      </section>
+
+      {/* About Section */}
+      <section id="about" className="container mx-auto px-4 py-20 bg-muted/30 rounded-3xl my-20">
+        <div className="max-w-4xl mx-auto">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold mb-4">About POIM</h2>
+            <p className="text-muted-foreground max-w-2xl mx-auto">
+              Lorem ipsum dolor sit amet, consectetur adipiscing elit
+            </p>
+          </div>
+
+          <div className="space-y-6 text-muted-foreground">
+            <p>
+              Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
+            </p>
+            <p>
+              Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+            </p>
+            <p>
+              Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt explicabo.
+            </p>
           </div>
         </div>
       </section>

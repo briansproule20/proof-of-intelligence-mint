@@ -131,7 +131,7 @@ export function TokenStats() {
   };
 
   return (
-    <section className="container mx-auto px-4 py-20">
+    <section id="stats" className="container mx-auto px-4 py-20">
       <div className="max-w-5xl mx-auto">
         <div className="grid md:grid-cols-2 gap-8 md:gap-12 items-center mb-12 max-w-4xl mx-auto">
           {/* Left: POIC Logo */}

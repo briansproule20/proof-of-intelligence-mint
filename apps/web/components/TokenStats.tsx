@@ -1,6 +1,7 @@
 'use client';
 
-import { useReadContract } from 'wagmi';
+import { useReadContract, usePublicClient } from 'wagmi';
+import { useEffect, useState } from 'react';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { DollarSign, Droplets, ExternalLink } from 'lucide-react';
@@ -20,6 +21,10 @@ const TARGET_MINTS = 100000;
 const PRICE_PER_TOKEN = 0.0002; // $0.0002 per POIC (1 USDC / 5000 POIC)
 
 export function TokenStats() {
+  const publicClient = usePublicClient({ chainId: CHAIN_ID });
+  const [mintCount, setMintCount] = useState<number>(0);
+  const [isLoadingEvents, setIsLoadingEvents] = useState(true);
+
   // Fetch total supply from POIC contract
   const { data: totalSupply, isLoading: isLoadingSupply } = useReadContract({
     address: CONTRACT_ADDRESS,
@@ -37,19 +42,85 @@ export function TokenStats() {
     chainId: base.id, // Base mainnet for USDC
   });
 
+  // Fetch TokensMinted events to count actual mints
+  useEffect(() => {
+    async function fetchMintEvents() {
+      if (!publicClient) return;
+
+      try {
+        setIsLoadingEvents(true);
+
+        // Get current block first
+        const currentBlock = await publicClient.getBlockNumber();
+
+        // RPC allows max 1000 blocks per query, so we need to chunk
+        // Query last 10k blocks in 1000-block chunks (roughly 5.5 hours on Base at ~2s per block)
+        // This should capture all recent mints without overwhelming the RPC
+        const BLOCKS_PER_CHUNK = BigInt(1000);
+        const TOTAL_BLOCKS_TO_QUERY = BigInt(10000);
+
+        const startBlock = currentBlock > TOTAL_BLOCKS_TO_QUERY
+          ? currentBlock - TOTAL_BLOCKS_TO_QUERY
+          : BigInt(0);
+
+        console.log('[TokenStats] Querying events from block', startBlock.toString(), 'to', currentBlock.toString());
+
+        let allLogs: any[] = [];
+
+        // Helper to delay between requests to avoid rate limiting
+        const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+        // Query in chunks of 1000 blocks with delays
+        for (let fromBlock = startBlock; fromBlock < currentBlock; fromBlock += BLOCKS_PER_CHUNK) {
+          const toBlock = fromBlock + BLOCKS_PER_CHUNK > currentBlock
+            ? currentBlock
+            : fromBlock + BLOCKS_PER_CHUNK;
+
+          const logs = await publicClient.getLogs({
+            address: CONTRACT_ADDRESS,
+            event: {
+              type: 'event',
+              name: 'TokensMinted',
+              inputs: [
+                { name: 'to', type: 'address', indexed: true },
+                { name: 'amount', type: 'uint256', indexed: false },
+                { name: 'nonce', type: 'uint256', indexed: false },
+              ],
+            },
+            fromBlock,
+            toBlock,
+          });
+
+          allLogs = [...allLogs, ...logs];
+
+          // Add 200ms delay between requests to avoid rate limiting
+          await delay(200);
+        }
+
+        // Each event = 1 successful mint
+        setMintCount(allLogs.length);
+        console.log('[TokenStats] Found', allLogs.length, 'TokensMinted events');
+      } catch (error) {
+        console.error('[TokenStats] Error fetching mint events:', error);
+        // Fallback: show 0 mints if events can't be fetched
+        setMintCount(0);
+      } finally {
+        setIsLoadingEvents(false);
+      }
+    }
+
+    fetchMintEvents();
+
+    // Refresh every 30 seconds
+    const interval = setInterval(fetchMintEvents, 30000);
+    return () => clearInterval(interval);
+  }, [publicClient]);
+
   // Calculate stats
   const totalMinted = totalSupply ? Number(formatUnits(totalSupply, 18)) : 0;
   const lpPoolBalance = usdcBalance ? Number(formatUnits(usdcBalance, 6)) : 0; // USDC has 6 decimals
 
-  // TODO: Track actual user mints properly
-  // Current totalSupply includes pre-minted tokens, not just user mints
-  // Need to either:
-  // 1. Add a public counter variable to the contract (mintCount)
-  // 2. Listen to TokensMinted events and count them
-  // 3. Track mints in a backend database
-  // For now, we calculate based on LP pool USDC balance (1 USDC = 1 mint)
-
-  const numberOfMints = lpPoolBalance > 0 ? Math.floor(lpPoolBalance) : 0; // Each USDC = 1 mint
+  const numberOfMints = mintCount; // Count from TokensMinted events
   const progressPercent = Math.min((numberOfMints / TARGET_MINTS) * 100, 100);
 
   // Format numbers for display
@@ -101,7 +172,7 @@ export function TokenStats() {
               <div className="flex justify-between text-sm">
                 <span className="font-medium">Successful Mints</span>
                 <span className="text-muted-foreground">
-                  {isLoadingSupply ? '...' : `${numberOfMints.toLocaleString()} / ${TARGET_MINTS.toLocaleString()}`}
+                  {isLoadingEvents ? '...' : `${numberOfMints.toLocaleString()} / ${TARGET_MINTS.toLocaleString()}`}
                 </span>
               </div>
               <div className="h-4 bg-muted rounded-full overflow-hidden">
@@ -111,7 +182,7 @@ export function TokenStats() {
                 />
               </div>
               <p className="text-xs text-muted-foreground">
-                {isLoadingSupply ? 'Loading...' : `${progressPercent.toFixed(2)}% to LP launch`}
+                {isLoadingEvents ? 'Loading events from blockchain...' : `${progressPercent.toFixed(2)}% to LP launch • Counted from TokensMinted events`}
               </p>
             </div>
 

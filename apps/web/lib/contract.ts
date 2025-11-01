@@ -21,6 +21,13 @@ export const POIC_ABI = [
   },
   {
     type: 'function',
+    name: 'totalSupply',
+    stateMutability: 'view',
+    inputs: [],
+    outputs: [{ name: '', type: 'uint256' }],
+  },
+  {
+    type: 'function',
     name: 'name',
     stateMutability: 'view',
     inputs: [],
@@ -80,3 +87,28 @@ export const CONTRACT_ADDRESS = (process.env.NEXT_PUBLIC_CONTRACT_ADDRESS ||
   '0x0000000000000000000000000000000000000000') as `0x${string}`;
 
 export const CHAIN_ID = parseInt(process.env.NEXT_PUBLIC_CHAIN_ID || '84532');
+
+// USDC Contract on Base Mainnet
+export const USDC_ADDRESS = '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913' as `0x${string}`;
+
+// Minimal USDC ABI for reading balance
+export const USDC_ABI = [
+  {
+    type: 'function',
+    name: 'balanceOf',
+    stateMutability: 'view',
+    inputs: [{ name: 'account', type: 'address' }],
+    outputs: [{ name: '', type: 'uint256' }],
+  },
+  {
+    type: 'function',
+    name: 'decimals',
+    stateMutability: 'view',
+    inputs: [],
+    outputs: [{ name: '', type: 'uint8' }],
+  },
+] as const;
+
+// Server wallet that collects USDC for LP
+export const SERVER_WALLET_ADDRESS = (process.env.NEXT_PUBLIC_MINT_SIGNER_ADDRESS ||
+  '0x32d831cd322EB5DF497A1A640175a874b5372BF8') as `0x${string}`;

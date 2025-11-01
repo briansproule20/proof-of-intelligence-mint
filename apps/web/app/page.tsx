@@ -1,11 +1,11 @@
 'use client';
 
 import Link from 'next/link';
-import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Sparkles, Wallet, Brain, Coins, ArrowRight, CheckCircle2, TrendingUp, DollarSign, Droplets, ExternalLink } from 'lucide-react';
+import { Sparkles, Wallet, Brain, Coins, ArrowRight, CheckCircle2 } from 'lucide-react';
 import { WalletConnect } from '@/components/WalletConnect';
+import { TokenStats } from '@/components/TokenStats';
 import { useAccount } from 'wagmi';
 
 export default function HomePage() {
@@ -199,106 +199,8 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Token Stats Section */}
-      <section className="container mx-auto px-4 py-20">
-        <div className="max-w-5xl mx-auto">
-          {/* TODO: Implement real-time stats fetching from blockchain
-              - Use readContract from wagmi to fetch totalSupply from POIC contract
-              - Calculate LP pool balance from USDC contract
-              - Fetch current price from Uniswap V4 pool (after launch)
-          */}
-
-          <div className="grid md:grid-cols-2 gap-8 md:gap-12 items-center mb-12">
-            {/* Left: POIC Logo */}
-            <div className="flex justify-center md:justify-end mb-8 md:mb-0">
-              <div className="relative w-48 h-48 md:w-64 md:h-64">
-                <div className="absolute inset-0 bg-primary/20 blur-3xl rounded-full"></div>
-                <Image
-                  src="/poic-favicon.png"
-                  alt="POIC Token"
-                  width={256}
-                  height={256}
-                  className="relative w-full h-full"
-                  priority
-                />
-              </div>
-            </div>
-
-            {/* Right: Progress Chart */}
-            <div className="space-y-6 px-4 md:px-0">
-              <div>
-                <h3 className="text-2xl font-bold mb-2">POIC Token Launch</h3>
-                <p className="text-muted-foreground">Progress to Uniswap V4 LP Launch</p>
-              </div>
-
-              {/* Progress Bar */}
-              <div className="space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span className="font-medium">Tokens Minted</span>
-                  <span className="text-muted-foreground">0 / 100,000</span>
-                </div>
-                <div className="h-4 bg-muted rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-gradient-to-r from-primary to-primary/60 transition-all duration-500"
-                    style={{ width: '0%' }}
-                  />
-                </div>
-                <p className="text-xs text-muted-foreground">0% complete</p>
-              </div>
-
-              {/* Key Metrics */}
-              <div className="grid grid-cols-2 gap-4 pt-4">
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <DollarSign className="h-4 w-4" />
-                    Current Price
-                  </div>
-                  <div className="text-2xl font-bold">$0.0002</div>
-                </div>
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Droplets className="h-4 w-4" />
-                    LP Pool
-                  </div>
-                  <div className="text-2xl font-bold">$0</div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Explorer Links */}
-          <div className="flex flex-col sm:flex-row gap-3 justify-center">
-            <Button
-              asChild
-              variant="outline"
-              className="gap-2"
-            >
-              <a
-                href={`https://basescan.org/address/${process.env.NEXT_PUBLIC_CONTRACT_ADDRESS || '0x0000000000000000000000000000000000000000'}`}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                View on Basescan
-                <ExternalLink className="h-4 w-4" />
-              </a>
-            </Button>
-            <Button
-              asChild
-              variant="outline"
-              className="gap-2"
-            >
-              <a
-                href={`https://base.blockscout.com/address/${process.env.NEXT_PUBLIC_CONTRACT_ADDRESS || '0x0000000000000000000000000000000000000000'}`}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                View on Blockscout
-                <ExternalLink className="h-4 w-4" />
-              </a>
-            </Button>
-          </div>
-        </div>
-      </section>
+      {/* Token Stats Section - Real-time blockchain data */}
+      <TokenStats />
 
       {/* CTA Section */}
       <section className="container mx-auto px-4 py-20">

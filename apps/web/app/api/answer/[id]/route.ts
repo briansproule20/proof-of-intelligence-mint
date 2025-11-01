@@ -11,8 +11,13 @@ import { keccak256, toBytes } from 'viem';
 /**
  * POST /api/answer/:id
  *
- * Submit an answer to a question with x402 payment
- * Flow: User pays 1 USDC → Verify answer → Mint tokens → Forward USDC to contract
+ * Submit an answer to a question
+ *
+ * TODO: Remove x402 payment from this endpoint
+ * CURRENT FLOW (WRONG): User pays 1 USDC → Verify answer → Mint tokens
+ * EXPECTED FLOW: Verify answer → Mint tokens if correct (payment already collected at question time)
+ *
+ * See X402_INTEGRATION.md for full implementation details
  */
 export async function POST(
   request: NextRequest,

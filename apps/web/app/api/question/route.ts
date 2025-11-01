@@ -6,7 +6,16 @@ import { QuestionResponse } from '@poim/shared';
  * GET /api/question
  *
  * Returns a question generated via Echo API
- * v2: Will add x402 payment flow
+ *
+ * TODO: Move x402 payment HERE (not on answer submission)
+ * EXPECTED FLOW:
+ * 1. User pays 1 USDC via x402 → Receives question
+ * 2. User submits answer → Receives 5000 POIC if correct (no additional payment)
+ *
+ * This makes more sense because:
+ * - Users pay upfront for the chance to answer
+ * - Payment happens before they know if they're right/wrong
+ * - Cleaner UX: pay once per question attempt
  */
 export async function GET(request: NextRequest) {
   try {

@@ -267,22 +267,13 @@ export default function HomePage() {
       {/* Footer */}
       <footer className="border-t mt-20">
         <div className="container mx-auto px-4 py-8">
-          <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-            <a href="https://www.merit.systems/" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
-              <Sparkles className="h-4 w-4" />
-              <span>Built with Merit Systems</span>
+          <div className="flex flex-col md:flex-row justify-center items-center gap-6">
+            <a href="https://x402.org" target="_blank" rel="noopener noreferrer" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+              x402 Protocol
             </a>
-            <div className="flex gap-6 text-sm text-muted-foreground">
-              <a href="https://echo.merit.systems/docs" target="_blank" rel="noopener noreferrer" className="hover:text-foreground transition-colors">
-                Echo Docs
-              </a>
-              <a href="https://docs.base.org" target="_blank" rel="noopener noreferrer" className="hover:text-foreground transition-colors">
-                Base Docs
-              </a>
-              <a href="https://github.com/briansproule20/proof-of-intelligence-mint" target="_blank" rel="noopener noreferrer" className="hover:text-foreground transition-colors">
-                GitHub
-              </a>
-            </div>
+            <a href="https://docs.base.org" target="_blank" rel="noopener noreferrer" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+              Base Docs
+            </a>
           </div>
         </div>
       </footer>

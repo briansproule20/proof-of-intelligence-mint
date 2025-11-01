@@ -12,13 +12,13 @@ export interface EchoClient {
 
 /**
  * Echo API client for server-side operations
- * Now uses LLM-powered question generation via x402 payments
+ * Uses x402 + Echo for question generation
  */
 export const echoClient: EchoClient = {
   async getQuestion(userId: string, difficulty: 'easy' | 'medium' | 'hard' = 'easy'): Promise<EchoQuestion> {
     const cache = getQuestionCache();
 
-    // Use LLM to generate questions via x402 payments
+    // Use x402 + Echo for question generation
     const generator = getQuestionGenerator();
     const question = await generator.generateQuestion(userId, difficulty);
 
@@ -32,7 +32,7 @@ export const echoClient: EchoClient = {
     // Remove metadata before returning (don't send correct answer to client!)
     const { _meta, ...cleanQuestion } = question as any;
 
-    console.log('[EchoClient] Generated LLM question:', cleanQuestion.id);
+    console.log('[EchoClient] Generated question via x402+Echo:', cleanQuestion.id);
     return cleanQuestion;
   },
 

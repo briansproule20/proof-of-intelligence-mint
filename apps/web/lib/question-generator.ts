@@ -75,12 +75,11 @@ export class QuestionGenerator {
   private readonly MAX_FAILURES = 3; // Circuit breaker: stop after 3 failures
 
   /**
-   * Initialize the CDP client and x402 OpenAI provider
+   * Initialize the x402 + Echo OpenAI provider
    */
   async initialize(): Promise<void> {
     if (this.initialized) return;
 
-    // Use MINT_SIGNER_PRIVATE_KEY for x402 payments wallet
     const privateKey = process.env.MINT_SIGNER_PRIVATE_KEY;
 
     if (!privateKey) {
@@ -96,7 +95,7 @@ export class QuestionGenerator {
         transport: http(process.env.NEXT_PUBLIC_BASE_MAINNET_RPC_URL),
       });
 
-      // Initialize x402 OpenAI provider
+      // Initialize x402 OpenAI provider (routes through Echo)
       this.openai = createX402OpenAI(walletClient as any);
       this.initialized = true;
 
@@ -170,8 +169,8 @@ Return only the question data in this format:
       console.log(`[QuestionGenerator] Generating ${difficulty} question for user ${userId}...`);
       console.log('[QuestionGenerator] Prompt:', prompt.substring(0, 200) + '...');
 
-      // Generate text using x402-powered OpenAI
-      console.log('[QuestionGenerator] Calling generateText with x402 OpenAI...');
+      // Generate text using x402-powered OpenAI via Echo
+      console.log('[QuestionGenerator] Calling generateText with x402 + Echo...');
       const startTime = Date.now();
 
       const { text } = await generateText({

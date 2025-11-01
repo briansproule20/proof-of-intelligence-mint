@@ -48,9 +48,9 @@ export default function PlayPage() {
 
       console.log('[PlayPage] Fetching question from API...');
 
-      // TEMPORARY: Questions are free for users while we debug x402
-      // Backend still pays Echo for AI generation via createX402OpenAI
-      const response = await fetch(`/api/question?userId=${userId}`);
+      // Call /api/x402/question which requires 1 USDC payment via x402 middleware
+      // Middleware validates payment → Proxy forwards to /api/question → Returns question
+      const response = await fetch(`/api/x402/question?userId=${userId}`);
       console.log('[PlayPage] Response status:', response.status);
 
       if (!response.ok) {

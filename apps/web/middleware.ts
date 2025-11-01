@@ -1,34 +1,34 @@
 import { paymentMiddleware } from 'x402-next';
+import { facilitator } from '@coinbase/x402';
+import { x402RoutesConfig } from './lib/x402-routes';
 
-// x402 payment configuration for POIC minting
-// TODO: PAYMENT FLOW NEEDS TO BE FIXED
-// CURRENT (WRONG): User pays 1 USDC when submitting answer
-// EXPECTED: User pays 1 USDC when requesting question
-//
-// To fix:
-// 1. Remove '/api/answer/:id' from payment routes below
-// 2. Add '/api/question' to payment routes
-// 3. Update matcher to ['/api/question']
-const SERVER_WALLET = (process.env.MINT_SIGNER_ADDRESS || '0x32d831cd322EB5DF497A1A640175a874b5372BF8') as `0x${string}`;
-const MINT_PRICE = '$1.00'; // 1 USDC to get a question
-const USDC_BASE = '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913';
+/**
+ * x402 Payment Middleware - Polymarketeer Pattern
+ *
+ * This middleware:
+ * 1. Intercepts requests to /api/x402/*
+ * 2. Validates payment (1 USDC to server wallet)
+ * 3. If payment succeeds, allows request to proceed to the catch-all proxy
+ * 4. The proxy forwards to actual /api/* endpoints
+ *
+ * Pattern from: https://github.com/sragss/polymarketeer
+ *
+ * Payment flow:
+ * - User requests /api/x402/question → Pays 1 USDC → Gets question
+ * - User submits answer to /api/answer/:id → FREE (just verify + mint)
+ */
+const RECIPIENT_ADDRESS = (
+  process.env.MINT_SIGNER_ADDRESS || '0x32d831cd322EB5DF497A1A640175a874b5372BF8'
+) as `0x${string}`;
 
 export const middleware = paymentMiddleware(
-  SERVER_WALLET,
-  {
-    '/api/answer/:id': {
-      price: MINT_PRICE,
-      network: 'base',
-      config: {
-        description: 'Mint 5000 POIC tokens - payment collected for LP pool',
-      },
-    },
-  },
-  {
-    url: 'https://x402.org/facilitator',
-  }
+  RECIPIENT_ADDRESS,
+  x402RoutesConfig,
+  facilitator
 );
 
+// Configure which paths the middleware should run on
 export const config = {
-  matcher: ['/api/answer/:path*'],
+  matcher: ['/api/x402/:path*'],
+  runtime: 'nodejs',
 };

@@ -13,6 +13,8 @@
     "@coinbase/cdp-sdk": "^1.38.4",
     "@coinbase/x402": "^0.7.0",
     "@merit-systems/ai-x402": "^0.1.1",
+    "@merit-systems/echo-next-sdk": "^0.0.24",
+    "@merit-systems/echo-react-sdk": "^1.0.33",
     "@poim/shared": "workspace:*",
     "@radix-ui/react-dialog": "^1.1.2",
     "@radix-ui/react-label": "^2.1.0",
@@ -35,6 +37,7 @@
     "tailwindcss-animate": "^1.0.7",
     "viem": "^2.21.45",
     "wagmi": "^2.12.29",
+    "x402": "^0.7.0",
     "x402-fetch": "^0.7.0",
     "x402-next": "^0.7.0",
     "zod": "^3.23.8"

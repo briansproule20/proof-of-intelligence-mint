@@ -59,7 +59,7 @@ export default function PlayPage() {
       const data: QuestionResponse = await response.json();
       console.log('[PlayPage] Received data:', data);
 
-      if (data.question) {
+      if (!data.requiresPayment) {
         setQuestion(data.question);
         setQuestionId(data.question.id);
       }

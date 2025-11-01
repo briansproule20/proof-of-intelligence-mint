@@ -45,8 +45,8 @@ function createCdpWalletClient(cdpAccount: any) {
 
   // Create wallet client with CDP account
   return createWalletClient({
-    account: viemAccount,
-    chain: baseSepolia,
+    account: viemAccount as any,
+    chain: base,
     transport: customTransport,
   });
 }
@@ -97,7 +97,7 @@ export class QuestionGenerator {
       });
 
       // Initialize x402 OpenAI provider
-      this.openai = createX402OpenAI(walletClient);
+      this.openai = createX402OpenAI(walletClient as any);
       this.initialized = true;
 
       console.log('[QuestionGenerator] Successfully initialized with wallet:', account.address);
@@ -175,7 +175,7 @@ Generate the question now:`;
         model: this.openai('gpt-4o'),
         prompt,
         temperature: 0.8, // Add some creativity
-        maxTokens: 500,
+        maxOutputTokens: 500,
       });
 
       const duration = Date.now() - startTime;
@@ -199,7 +199,7 @@ Generate the question now:`;
           userId,
           generatedAt: new Date().toISOString(),
         },
-      };
+      } as any;
 
       console.log('[QuestionGenerator] Successfully generated question:', question.id);
 

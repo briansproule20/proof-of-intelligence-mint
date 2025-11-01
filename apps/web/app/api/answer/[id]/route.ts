@@ -43,9 +43,11 @@ export async function POST(
     console.log('[API Answer] Idempotency key (bytes32):', paymentTxHash);
 
     // Verify answer via Echo client
+    // Using wallet address as userId for now
     const isCorrect = await echoClient.verifyAnswer({
       questionId,
-      answer
+      answer,
+      userId: walletAddress
     });
 
     if (!isCorrect) {

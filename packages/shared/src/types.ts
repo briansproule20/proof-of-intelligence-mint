@@ -64,11 +64,15 @@ export type AnswerRequest = z.infer<typeof AnswerRequestSchema>;
 export const AnswerResponseSchema = z.discriminatedUnion('correct', [
   z.object({
     correct: z.literal(true),
-    mintSignature: MintSignatureResponseSchema,
+    message: z.string(),
+    txHash: z.string().optional(),
+    usdcTxHash: z.string().optional(),
+    error: z.string().optional(),
   }),
   z.object({
     correct: z.literal(false),
     message: z.string(),
+    error: z.string().optional(),
   }),
 ]);
 

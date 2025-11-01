@@ -36,7 +36,11 @@ export async function generateQuestionWithUserWallet(
   console.log('[ClientQuestionGenerator] Wallet has signTypedData?', typeof walletClient.signTypedData);
   console.log('[ClientQuestionGenerator] Wallet has signMessage?', typeof walletClient.signMessage);
 
-  const openai = createX402OpenAI(walletClient);
+  if (!walletClient.account) {
+    throw new Error('Wallet client must have an account');
+  }
+
+  const openai = createX402OpenAI(walletClient as any);
 
   const prompt = `Generate a single multiple-choice trivia question for a blockchain-based intelligence game.
 
@@ -74,7 +78,7 @@ Generate the question now:`;
       model: openai('gpt-4o'),
       prompt,
       temperature: 0.8,
-      maxTokens: 500,
+      maxOutputTokens: 500,
     });
 
     console.log('[ClientQuestionGenerator] Successfully generated question');

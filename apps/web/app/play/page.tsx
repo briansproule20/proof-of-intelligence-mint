@@ -30,11 +30,13 @@ export default function PlayPage() {
     fetchQuestion();
   };
 
-  // Fetch question when component mounts (no wallet required for questions)
+  // Fetch question only when wallet is connected
   useEffect(() => {
-    fetchQuestion();
+    if (isConnected && address) {
+      fetchQuestion();
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [isConnected, address]);
 
   const fetchQuestion = async () => {
     try {
@@ -210,6 +212,32 @@ export default function PlayPage() {
               )}
             </CardFooter>
           </Card>
+        ) : !isConnected ? (
+          /* Wallet Not Connected State */
+          <Card className="border-2 border-primary/20 bg-gradient-to-br from-primary/5 to-primary/10">
+            <CardContent className="py-16">
+              <div className="flex flex-col items-center gap-6 max-w-md mx-auto text-center">
+                <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center">
+                  <Sparkles className="h-8 w-8 text-primary" />
+                </div>
+                <div className="space-y-2">
+                  <h3 className="text-2xl font-bold">Connect Your Wallet to Play</h3>
+                  <p className="text-muted-foreground">
+                    You need a connected wallet to pay for questions (1 USDC via x402) and receive POIC tokens when you answer correctly.
+                  </p>
+                </div>
+                <div className="flex flex-col gap-3 w-full">
+                  <WalletConnect />
+                  <Button asChild variant="outline" className="w-full">
+                    <Link href="/">
+                      <ArrowLeft className="h-4 w-4 mr-2" />
+                      Back to Home
+                    </Link>
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         ) : (
           /* Question State */
           <Card className="border-2">
@@ -312,15 +340,9 @@ export default function PlayPage() {
                   <p className="text-destructive font-medium">
                     {error || 'Failed to load question'}
                   </p>
-                  {!isConnected ? (
-                    <p className="text-sm text-muted-foreground text-center">
-                      Connect your wallet to get questions
-                    </p>
-                  ) : (
-                    <Button onClick={fetchQuestion} variant="outline" disabled={isLoading}>
-                      {isLoading ? 'Loading...' : 'Get Question'}
-                    </Button>
-                  )}
+                  <Button onClick={fetchQuestion} variant="outline" disabled={isLoading}>
+                    {isLoading ? 'Loading...' : 'Get Question'}
+                  </Button>
                 </div>
               </CardContent>
             )}

@@ -5,8 +5,10 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Sparkles, Wallet, Brain, Coins, ArrowRight, CheckCircle2 } from 'lucide-react';
 import { WalletConnect } from '@/components/WalletConnect';
+import { useAccount } from 'wagmi';
 
 export default function HomePage() {
+  const { isConnected } = useAccount();
   return (
     <div className="min-h-screen bg-gradient-to-b from-background via-background to-muted/20">
       {/* Header */}
@@ -24,8 +26,12 @@ export default function HomePage() {
               How It Works
             </Link>
             <WalletConnect />
-            <Button asChild size="sm" className="hidden md:flex">
-              <Link href="/play">Launch App</Link>
+            <Button asChild={isConnected} size="sm" className="hidden md:flex" disabled={!isConnected}>
+              {isConnected ? (
+                <Link href="/play">Play Game</Link>
+              ) : (
+                <span>Play Game</span>
+              )}
             </Button>
           </nav>
         </div>
@@ -49,11 +55,18 @@ export default function HomePage() {
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
-            <Button asChild size="lg" className="gap-2">
-              <Link href="/play">
-                Start Playing
-                <ArrowRight className="h-4 w-4" />
-              </Link>
+            <Button asChild={isConnected} size="lg" className="gap-2" disabled={!isConnected}>
+              {isConnected ? (
+                <Link href="/play">
+                  Start Playing
+                  <ArrowRight className="h-4 w-4" />
+                </Link>
+              ) : (
+                <span className="flex items-center gap-2">
+                  Start Playing
+                  <ArrowRight className="h-4 w-4" />
+                </span>
+              )}
             </Button>
             <Button asChild size="lg" variant="outline">
               <Link href="#how-it-works">Learn More</Link>
@@ -176,13 +189,25 @@ export default function HomePage() {
               Connect your wallet and start earning POIC tokens today
             </CardDescription>
           </CardHeader>
-          <CardContent className="flex justify-center">
-            <Button asChild size="lg" className="gap-2">
-              <Link href="/play">
-                <Sparkles className="h-4 w-4" />
-                Launch App
-              </Link>
+          <CardContent className="flex flex-col items-center gap-4">
+            <Button asChild={isConnected} size="lg" className="gap-2" disabled={!isConnected}>
+              {isConnected ? (
+                <Link href="/play">
+                  <Sparkles className="h-4 w-4" />
+                  Play Game
+                </Link>
+              ) : (
+                <span className="flex items-center gap-2">
+                  <Sparkles className="h-4 w-4" />
+                  Play Game
+                </span>
+              )}
             </Button>
+            {!isConnected && (
+              <p className="text-sm text-muted-foreground">
+                Connect your wallet to start playing
+              </p>
+            )}
           </CardContent>
         </Card>
       </section>

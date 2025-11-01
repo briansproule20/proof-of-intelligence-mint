@@ -9,8 +9,9 @@ export function inputSchemaToX402(
   schema: z.ZodObject<any>
 ): HTTPRequestStructure {
   return {
+    type: 'http',
     method: 'GET',
-    query: zodToJsonSchema(schema),
+    queryParams: zodToJsonSchema(schema),
   };
 }
 

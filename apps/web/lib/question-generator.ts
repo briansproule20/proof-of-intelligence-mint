@@ -137,31 +137,34 @@ export class QuestionGenerator {
     const difficultyConfig = DIFFICULTY_CONFIGS[difficulty];
 
     // Create the prompt for question generation
-    const prompt = `Generate a single multiple-choice trivia question for a blockchain-based intelligence game.
+    const prompt = `Generate a single multiple-choice trivia question.
 
 Difficulty Level: ${difficulty.toUpperCase()}
 Difficulty Description: ${difficultyConfig.description}
 Complexity: ${difficultyConfig.complexity}
 
+CRITICAL RULES:
+  - Provide EXACTLY 4 answer options (A, B, C, D in that order)
+  - Exactly ONE answer must be correct
+  - NEVER include the answer within the question prompt itself
+  - Use clear phrasing; avoid double negatives
+  - All questions must be factually accurate
+  - Vary topics across different categories (history, science, geography, culture, arts, sports, technology, nature, etc.)
+
 Requirements:
-- Generate a ${difficulty} difficulty general knowledge question
+- Generate a ${difficulty} difficulty general knowledge trivia question
 - Question should be clear, unambiguous, and interesting
-- Provide exactly 4 answer options (A, B, C, D)
-- Exactly ONE answer must be correct
-- The other 3 answers should be plausible but incorrect
-- Topics can include: history, science, geography, culture, arts, sports, technology, nature, etc.
+- The 3 incorrect answers should be plausible but wrong
 - Avoid overly obscure or niche topics unless difficulty is hard
 - Question should be appropriate for a global audience
 
-Response Format (JSON only, no markdown):
+Return only the question data in this format:
 {
   "question": "Your question text here?",
   "options": ["Option A", "Option B", "Option C", "Option D"],
   "correctAnswer": "The exact text of the correct option",
   "explanation": "Brief explanation of why this is correct"
-}
-
-Generate the question now:`;
+}`;
 
     try {
       console.log(`[QuestionGenerator] Generating ${difficulty} question for user ${userId}...`);

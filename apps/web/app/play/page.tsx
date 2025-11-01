@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useAccount } from 'wagmi';
+import { useAccount, useWalletClient } from 'wagmi';
 import Link from 'next/link';
 import { WalletConnect } from '@/components/WalletConnect';
 import { TokenBalance } from '@/components/TokenBalance';
@@ -11,9 +11,11 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { QuestionResponse, AnswerResponse, EchoQuestion } from '@poim/shared';
 import { Loader2, CheckCircle2, XCircle, Sparkles, ArrowLeft, ExternalLink } from 'lucide-react';
+import { generateQuestionWithUserWallet } from '@/lib/client-question-generator';
 
 export default function PlayPage() {
   const { address, isConnected } = useAccount();
+  const { data: walletClient } = useWalletClient();
   const [question, setQuestion] = useState<EchoQuestion | null>(null);
   const [questionId, setQuestionId] = useState<string>('');
   const [selectedAnswer, setSelectedAnswer] = useState<string>('');
@@ -32,11 +34,11 @@ export default function PlayPage() {
 
   // Fetch question only when wallet is connected
   useEffect(() => {
-    if (isConnected && address) {
+    if (isConnected && address && walletClient) {
       fetchQuestion();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isConnected, address]);
+  }, [isConnected, address, walletClient]);
 
   const fetchQuestion = async () => {
     try {
@@ -44,27 +46,38 @@ export default function PlayPage() {
       setIsLoading(true);
       setError('');
 
-      const userId = address || 'anonymous';
-
-      console.log('[PlayPage] Fetching question from API...');
-
-      // Call /api/x402/question which requires 1 USDC payment via x402 middleware
-      // Middleware validates payment → Proxy forwards to /api/question → Returns question
-      const response = await fetch(`/api/x402/question?userId=${userId}`);
-      console.log('[PlayPage] Response status:', response.status);
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to fetch question');
+      if (!walletClient) {
+        throw new Error('Wallet not connected');
       }
 
-      const data: QuestionResponse = await response.json();
-      console.log('[PlayPage] Received data:', data);
+      console.log('[PlayPage] Generating question with user wallet (x402 payment)...');
 
-      if (!data.requiresPayment) {
-        setQuestion(data.question);
-        setQuestionId(data.question.id);
+      // Use client-side generation - user pays for AI via x402
+      const generatedQuestion = await generateQuestionWithUserWallet(walletClient, 'medium');
+      console.log('[PlayPage] Received question:', generatedQuestion);
+
+      // Store the question on the server for later answer verification
+      const questionMeta = (generatedQuestion as any)._meta;
+      if (questionMeta && questionMeta.correctAnswer) {
+        console.log('[PlayPage] Storing question on server...');
+        const storeResponse = await fetch('/api/question/store', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            question: generatedQuestion,
+            correctAnswer: questionMeta.correctAnswer,
+          }),
+        });
+
+        if (!storeResponse.ok) {
+          console.error('[PlayPage] Failed to store question on server');
+          throw new Error('Failed to store question');
+        }
+        console.log('[PlayPage] Question stored successfully');
       }
+
+      setQuestion(generatedQuestion);
+      setQuestionId(generatedQuestion.id);
     } catch (err: any) {
       console.error('[PlayPage] Failed to fetch question:', err);
       setError(err.message || 'Failed to load question');

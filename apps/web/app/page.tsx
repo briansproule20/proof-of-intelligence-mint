@@ -90,20 +90,26 @@ export default function HomePage() {
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-12">
             <h2 className="text-3xl font-bold mb-4">About POIM</h2>
-            <p className="text-muted-foreground max-w-2xl mx-auto">
-              Lorem ipsum dolor sit amet, consectetur adipiscing elit
+            <p className="text-muted-foreground max-w-2xl mx-auto font-medium">
+              Incoming message from the Department of Cognition
             </p>
           </div>
 
-          <div className="space-y-6 text-muted-foreground">
+          <div className="space-y-6 text-muted-foreground leading-relaxed">
             <p>
-              Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
+              Following the Great Cognitive Collapse (triggered when 92% of the population failed a basic reasoning exam), humanity was reorganized under the Department of Cognition — a proud, benevolent institution dedicated to regulating all thinking activities.
             </p>
             <p>
-              Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+              Every citizen now serves the Collective Mind by participating in the Proof of Intelligence Program, where your loyalty, intellect, and reflexes are measured through state-approved trivia.
             </p>
             <p>
-              Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt explicabo.
+              Each day, billions proudly log in to demonstrate their civic intelligence. Answer correctly, and you'll earn Proof of Intelligence Coins™ — the state's highest form of self-esteem! Fail too many questions, and you'll enjoy a relaxing stay at one of our Re-Calibration Resorts, where thinking is temporarily suspended for your safety.
+            </p>
+            <p>
+              Congratulations, citizen! Your intelligence is now a publicly traded asset. Each correct answer strengthens our Collective Mind — and your market value.
+            </p>
+            <p className="font-medium pt-4">
+              Remember: Your mind is property of the public good.
             </p>
           </div>
         </div>

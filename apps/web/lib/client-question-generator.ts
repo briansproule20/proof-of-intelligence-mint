@@ -126,6 +126,17 @@ Return only the question data in this format:
     return question;
   } catch (error) {
     console.error('[ClientQuestionGenerator] Failed to generate question:', error);
-    throw new Error('Failed to generate question using LLM');
+
+    // Check if it's a payment-related error
+    if (error instanceof Error) {
+      if (error.message.includes('402') || error.message.includes('Payment')) {
+        throw new Error('Payment required: Please sign the transaction to pay for the question (1 USDC). Make sure you have enough USDC in your wallet.');
+      }
+      if (error.message.includes('rejected') || error.message.includes('denied')) {
+        throw new Error('Transaction rejected: You need to approve the payment to generate a question.');
+      }
+    }
+
+    throw new Error('Failed to generate question. Please try again or check your wallet balance.');
   }
 }

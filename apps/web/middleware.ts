@@ -1,5 +1,4 @@
 import { paymentMiddleware } from 'x402-next';
-import { facilitator } from '@coinbase/x402';
 import { x402RoutesConfig } from './lib/x402-routes';
 
 /**
@@ -24,7 +23,9 @@ const RECIPIENT_ADDRESS = (
 export const middleware = paymentMiddleware(
   RECIPIENT_ADDRESS,
   x402RoutesConfig,
-  facilitator
+  {
+    url: 'https://x402.org/facilitator',
+  }
 );
 
 // Configure which paths the middleware should run on

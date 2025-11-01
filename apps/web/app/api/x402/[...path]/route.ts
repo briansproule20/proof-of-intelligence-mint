@@ -14,9 +14,10 @@ import { NextRequest, NextResponse } from 'next/server';
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { path: string[] } }
+  context: { params: Promise<{ path: string[] }> }
 ) {
   // Reconstruct the original API path without the x402 prefix
+  const params = await context.params;
   const apiPath = `/api/${params.path.join('/')}`;
 
   // Build the full URL for the proxied request

@@ -60,7 +60,18 @@ export default function PlayPage() {
 
       // Make payment-required request to server
       // This will trigger the x402 middleware to collect 1.25 USDC payment to server wallet
-      const response = await fetchWithPayment(`/api/x402/question?userId=${address}&difficulty=medium`);
+      // Use absolute URL for x402-fetch
+      const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000';
+      const url = `${baseUrl}/api/x402/question?userId=${address}&difficulty=medium`;
+
+      console.log('[PlayPage] Fetching from URL:', url);
+
+      const response = await fetchWithPayment(url, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));

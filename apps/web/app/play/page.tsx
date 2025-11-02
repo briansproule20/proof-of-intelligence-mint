@@ -108,13 +108,7 @@ export default function PlayPage() {
       const fetchWithPayment = wrapFetchWithPayment(
         fetch,
         signerForDebug,
-        MAX_PAYMENT_USDC,
-        undefined, // Use default payment requirements selector
-        {
-          evmConfig: {
-            rpcUrl: 'https://base.gateway.tenderly.co', // Match wagmi RPC config
-          },
-        }
+        MAX_PAYMENT_USDC
       );
       console.log('[PlayPage] Wrapped fetch created successfully');
 
@@ -188,12 +182,7 @@ export default function PlayPage() {
             paymentHeader = await createPaymentHeader(
               signerForDebug,
               x402Version,
-              selectedPaymentRequirements,
-              {
-                evmConfig: {
-                  rpcUrl: 'https://base.gateway.tenderly.co',
-                },
-              }
+              selectedPaymentRequirements
             );
             console.log('[PlayPage] Payment header created successfully!');
             console.log('[PlayPage] Payment header length:', paymentHeader?.length || 0);

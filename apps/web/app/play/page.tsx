@@ -12,7 +12,9 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { AnswerResponse, EchoQuestion } from '@poim/shared';
 import { Loader2, CheckCircle2, XCircle, Sparkles, ArrowLeft, ExternalLink } from 'lucide-react';
-import { wrapFetchWithPayment } from 'x402-fetch';
+import { wrapFetchWithPayment, Signer } from 'x402-fetch';
+import { createPaymentHeader, selectPaymentRequirements } from 'x402/client';
+import { PaymentRequirementsSchema } from 'x402/types';
 
 export default function PlayPage() {
   const { address, isConnected, connector } = useAccount();
@@ -80,12 +82,40 @@ export default function PlayPage() {
         }
       }
 
-      // Wrap fetch with x402 payment handling
-      // Set maxValue to 2 USDC (2000000 in base units with 6 decimals) to allow 1.25 USDC payment
-      const MAX_PAYMENT_USDC = BigInt(2_000_000); // 2 USDC in base units (6 decimals)
+      // Wrap fetch with x402 payment handling (pattern from shirt.sh)
+      // Note: Coinbase wallet has viem compatibility issues, use "as unknown as Signer" cast
+      // maxValue: 2 USDC (2000000 in 6 decimals) to allow 1.25 USDC payment
+      const MAX_PAYMENT_USDC = BigInt(2_000_000);
 
       console.log('[PlayPage] Creating wrapped fetch with max value:', MAX_PAYMENT_USDC.toString());
-      const fetchWithPayment = wrapFetchWithPayment(fetch, activeWalletClient as any, MAX_PAYMENT_USDC);
+      console.log('[PlayPage] Wallet client details:', {
+        type: typeof activeWalletClient,
+        hasAccount: !!activeWalletClient?.account,
+        hasChain: !!activeWalletClient?.chain,
+        chainId: activeWalletClient?.chain?.id,
+        chainName: activeWalletClient?.chain?.name,
+        hasSignTypedData: typeof activeWalletClient?.signTypedData,
+        hasRequest: typeof activeWalletClient?.request,
+        hasWriteContract: typeof activeWalletClient?.writeContract,
+        hasSignMessage: typeof activeWalletClient?.signMessage,
+      });
+
+      // CRITICAL DEBUG: Check if x402 can recognize this wallet
+      console.log('[PlayPage] Testing x402 wallet detection...');
+      const signerForDebug = activeWalletClient as unknown as Signer;
+      console.log('[PlayPage] Signer cast complete');
+
+      const fetchWithPayment = wrapFetchWithPayment(
+        fetch,
+        signerForDebug,
+        MAX_PAYMENT_USDC,
+        undefined, // Use default payment requirements selector
+        {
+          evmConfig: {
+            rpcUrl: 'https://base.gateway.tenderly.co', // Match wagmi RPC config
+          },
+        }
+      );
       console.log('[PlayPage] Wrapped fetch created successfully');
 
       // Make payment-required request to server
@@ -96,20 +126,125 @@ export default function PlayPage() {
 
       console.log('[PlayPage] Fetching from URL:', url);
 
-      const response = await fetchWithPayment(url, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      }).catch((err: any) => {
-        console.error('[PlayPage] fetchWithPayment threw error:', {
+      let response;
+      try {
+        console.log('[PlayPage] Calling fetchWithPayment...');
+        console.log('[PlayPage] Request URL:', url);
+        console.log('[PlayPage] Request init:', {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+
+        // MANUAL PAYMENT HEADER CREATION FOR DEBUGGING
+        // First, make initial request to get 402
+        const initialResponse = await fetch(url, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+
+        console.log('[PlayPage] Initial response status:', initialResponse.status);
+
+        if (initialResponse.status === 402) {
+          console.log('[PlayPage] Got 402, processing payment...');
+          const paymentData = await initialResponse.json();
+          console.log('[PlayPage] Payment data:', paymentData);
+
+          const { x402Version, accepts } = paymentData;
+          console.log('[PlayPage] x402Version:', x402Version);
+          console.log('[PlayPage] accepts:', accepts);
+
+          // Parse payment requirements
+          const parsedPaymentRequirements = accepts.map((x: any) => PaymentRequirementsSchema.parse(x));
+          console.log('[PlayPage] Parsed payment requirements:', parsedPaymentRequirements);
+
+          // Select payment requirements (this should match x402-fetch logic)
+          const selectedPaymentRequirements = selectPaymentRequirements(
+            parsedPaymentRequirements,
+            'base', // Force base network
+            'exact'
+          );
+          console.log('[PlayPage] Selected payment requirements:', selectedPaymentRequirements);
+
+          // Check payment amount
+          const paymentAmount = BigInt(selectedPaymentRequirements.maxAmountRequired);
+          console.log('[PlayPage] Payment amount:', paymentAmount.toString());
+          console.log('[PlayPage] Max allowed:', MAX_PAYMENT_USDC.toString());
+
+          if (paymentAmount > MAX_PAYMENT_USDC) {
+            throw new Error(`Payment amount ${paymentAmount} exceeds maximum allowed ${MAX_PAYMENT_USDC}`);
+          }
+
+          // Try to create payment header manually
+          console.log('[PlayPage] Creating payment header manually...');
+          console.log('[PlayPage] Signer type:', typeof signerForDebug);
+          console.log('[PlayPage] Signer:', signerForDebug);
+
+          let paymentHeader;
+          try {
+            paymentHeader = await createPaymentHeader(
+              signerForDebug,
+              x402Version,
+              selectedPaymentRequirements,
+              {
+                evmConfig: {
+                  rpcUrl: 'https://base.gateway.tenderly.co',
+                },
+              }
+            );
+            console.log('[PlayPage] Payment header created successfully!');
+            console.log('[PlayPage] Payment header length:', paymentHeader?.length || 0);
+            console.log('[PlayPage] Payment header preview:', paymentHeader?.substring(0, 100));
+          } catch (headerErr: any) {
+            console.error('[PlayPage] FAILED to create payment header:', {
+              message: headerErr.message,
+              stack: headerErr.stack,
+              cause: headerErr.cause,
+              fullError: headerErr,
+            });
+            throw new Error(`Payment header creation failed: ${headerErr.message}`);
+          }
+
+          // Make second request with payment header
+          console.log('[PlayPage] Making second request with payment header...');
+          response = await fetch(url, {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+              'X-PAYMENT': paymentHeader,
+            },
+          });
+          console.log('[PlayPage] Second response status:', response.status);
+        } else {
+          response = initialResponse;
+        }
+
+        console.log('[PlayPage] fetchWithPayment returned successfully');
+      } catch (err: any) {
+        console.error('[PlayPage] fetchWithPayment threw error during payment processing:', {
           message: err.message,
           name: err.name,
           stack: err.stack,
           cause: err.cause,
+          fullError: err,
         });
+
+        // Check if it's a specific x402 error
+        if (err.message?.includes('Payment amount exceeds')) {
+          throw new Error('Payment amount exceeds maximum allowed. Contact support.');
+        }
+        if (err.message?.includes('Payment already attempted')) {
+          throw new Error('Payment retry detected. Please refresh and try again.');
+        }
+        if (err.message?.includes('createPaymentHeader')) {
+          throw new Error(`Payment header creation failed: ${err.message}. This may be a wallet compatibility issue.`);
+        }
+
         throw err;
-      });
+      }
 
       console.log('[PlayPage] Received response:', {
         ok: response.ok,
@@ -117,9 +252,11 @@ export default function PlayPage() {
         statusText: response.statusText,
       });
 
-      // If 402, check the response headers and body
+      // If 402, this means the x402-fetch wrapper FAILED to process payment
+      // It should have automatically handled the 402, created payment header, and retried
       if (response.status === 402) {
-        console.log('[PlayPage] 402 response detected - checking payment requirements');
+        console.error('[PlayPage] ⚠️  CRITICAL: 402 response returned - payment was NOT processed!');
+        console.error('[PlayPage] This means wrapFetchWithPayment failed to create payment header');
         console.log('[PlayPage] Response headers:', Object.fromEntries(response.headers.entries()));
 
         const responseText = await response.clone().text();
@@ -128,9 +265,13 @@ export default function PlayPage() {
         try {
           const responseJson = JSON.parse(responseText);
           console.log('[PlayPage] 402 Response JSON:', responseJson);
+          console.error('[PlayPage] Expected payment amount:', responseJson.accepts?.[0]?.maxAmountRequired);
+          console.error('[PlayPage] Payment destination:', responseJson.accepts?.[0]?.payTo);
         } catch (e) {
           console.log('[PlayPage] Response is not JSON');
         }
+
+        throw new Error('Payment processing failed - x402-fetch did not create payment header. Check wallet compatibility.');
       }
 
       if (!response.ok) {

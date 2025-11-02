@@ -155,7 +155,7 @@ export default function PlayPage() {
               <ul className="space-y-2 text-sm text-muted-foreground">
                 <li className="flex items-start gap-2">
                   <Sparkles className="h-4 w-4 mt-0.5 text-primary flex-shrink-0" />
-                  <span>Pay 1.25 USDC per question (via x402)</span>
+                  <span>Pay 1.25 USDC: $1.00 to LP, $0.25 for gas + LLM</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <CheckCircle2 className="h-4 w-4 mt-0.5 text-primary flex-shrink-0" />
@@ -163,7 +163,7 @@ export default function PlayPage() {
                 </li>
                 <li className="flex items-start gap-2">
                   <CheckCircle2 className="h-4 w-4 mt-0.5 text-primary flex-shrink-0" />
-                  <span>USDC collected for Uniswap V4 LP pool</span>
+                  <span>LP pool grows with each question</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <CheckCircle2 className="h-4 w-4 mt-0.5 text-primary flex-shrink-0" />

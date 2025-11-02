@@ -131,7 +131,7 @@ export default function HomePage() {
               </div>
               <h3 className="font-semibold text-lg mb-2">x402 Micropayments</h3>
               <p className="text-sm text-muted-foreground">
-                Pay 1.25 USDC per question using x402 protocol. Your payment flows directly to the Uniswap V4 LP pool, building liquidity as you play.
+                Pay 1.25 USDC per question: $1.00 goes to the LP pool, $0.25 covers gas fees and LLM costs. Powered by x402 protocol.
               </p>
             </CardContent>
           </Card>
@@ -196,7 +196,7 @@ export default function HomePage() {
                   <h3 className="font-semibold text-lg">Pay for a Question</h3>
                 </div>
                 <p className="text-muted-foreground">
-                  Each question costs 1.25 USDC via x402 micropayment protocol. Your payment is automatically added to the LP pool.
+                  Each question costs 1.25 USDC via x402: $1.00 builds the LP pool, $0.25 covers gas and AI generation fees.
                 </p>
               </div>
             </div>

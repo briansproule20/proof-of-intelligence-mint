@@ -2,7 +2,7 @@ import { createWalletClient, http, parseAbi, parseUnits } from 'viem';
 import { base } from 'viem/chains';
 import { privateKeyToAccount } from 'viem/accounts';
 import { CONTRACT_ADDRESS } from './contract';
-import { USDC_ADDRESS_BASE, PAYMENT_AMOUNT } from '@poim/shared';
+import { USDC_ADDRESS_BASE, PAYMENT_AMOUNT, LP_CONTRIBUTION } from '@poim/shared';
 
 // Server wallet for minting tokens
 const privateKey = process.env.SERVER_WALLET_PRIVATE_KEY;
@@ -33,11 +33,11 @@ const ERC20_ABI = parseAbi([
 ]);
 
 /**
- * Transfer USDC to the POIC contract
- * @param amount Amount in USDC (with 6 decimals)
+ * Transfer USDC to the POIC contract (LP pool)
+ * @param amount Amount in USDC (with 6 decimals) - defaults to LP_CONTRIBUTION (1.00 USDC)
  * @returns Transaction hash
  */
-export async function forwardUsdcToContract(amount: string = PAYMENT_AMOUNT): Promise<string> {
+export async function forwardUsdcToContract(amount: string = LP_CONTRIBUTION): Promise<string> {
   try {
     const hash = await walletClient.writeContract({
       address: USDC_ADDRESS_BASE as `0x${string}`,

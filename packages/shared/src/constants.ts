@@ -13,7 +13,9 @@ export const MAX_MINT_COUNT = 100000; // Maximum number of mints before LP creat
 // USDC configuration (Base Mainnet)
 export const USDC_ADDRESS_BASE = '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913';
 export const USDC_DECIMALS = 6;
-export const PAYMENT_AMOUNT = '1250000'; // 1.25 USDC with 6 decimals
+export const PAYMENT_AMOUNT = '1250000'; // 1.25 USDC with 6 decimals (user pays this)
+export const LP_CONTRIBUTION = '1000000'; // 1.00 USDC with 6 decimals (forwarded to LP pool)
+export const SERVER_FEE = '250000'; // 0.25 USDC with 6 decimals (kept by server for gas + LLM)
 
 // Signature expiry (15 minutes)
 export const SIGNATURE_VALIDITY_SECONDS = 15 * 60;

@@ -67,19 +67,20 @@ export async function POST(
       } as AnswerResponse);
     }
 
-    // Answer is correct - mint tokens and forward USDC
+    // Answer is correct - mint tokens and forward USDC to LP pool
     try {
       // 1. Mint tokens to user (using payment tx hash for idempotency)
       const mintTxHash = await mintTokens(walletAddress, paymentTxHash);
       console.log('[API Answer] Minted tokens, tx:', mintTxHash);
 
-      // 2. Forward 1.25 USDC to POIC contract for LP pool
+      // 2. Forward 1.00 USDC to POIC contract for LP pool
+      // (Server keeps 0.25 USDC for gas fees + LLM costs)
       const forwardTxHash = await forwardUsdcToContract();
-      console.log('[API Answer] Forwarded USDC to contract, tx:', forwardTxHash);
+      console.log('[API Answer] Forwarded 1.00 USDC to LP pool, tx:', forwardTxHash);
 
       return NextResponse.json({
         correct: true,
-        message: 'Tokens minted successfully! USDC forwarded to LP pool.',
+        message: 'Tokens minted successfully! $1.00 forwarded to LP pool.',
         txHash: mintTxHash,
         usdcTxHash: forwardTxHash,
       } as AnswerResponse);

@@ -18,8 +18,9 @@ import { base } from 'wagmi/chains';
 
 const TOKENS_PER_MINT = 5000;
 const TARGET_MINTS = 100000;
-const PRICE_PER_QUESTION = 1.25; // $1.25 USDC per question
-const PRICE_PER_TOKEN = 0.00025; // $0.00025 per POIC (1.25 USDC / 5000 POIC)
+const PRICE_PER_QUESTION = 1.25; // $1.25 USDC per question (user pays)
+const LP_CONTRIBUTION_PER_QUESTION = 1.00; // $1.00 USDC goes to LP pool per question
+const PRICE_PER_TOKEN = 0.0002; // $0.0002 per POIC (1.00 USDC / 5000 POIC)
 
 export function TokenStats() {
   const publicClient = usePublicClient({ chainId: CHAIN_ID });
@@ -121,8 +122,9 @@ export function TokenStats() {
   const totalMinted = totalSupply ? Number(formatUnits(totalSupply, 18)) : 0;
   const lpPoolBalance = usdcBalance ? Number(formatUnits(usdcBalance, 6)) : 0; // USDC has 6 decimals
 
-  // Calculate approximate mints based on LP pool balance divided by price per question
-  const estimatedMintsFromPool = lpPoolBalance / PRICE_PER_QUESTION;
+  // Calculate approximate mints based on LP pool balance divided by LP contribution per question
+  // Each successful answer contributes $1.00 to LP pool (server keeps $0.25 for fees)
+  const estimatedMintsFromPool = lpPoolBalance / LP_CONTRIBUTION_PER_QUESTION;
   const numberOfMints = mintCount; // Count from TokensMinted events
   const progressPercent = Math.min((estimatedMintsFromPool / TARGET_MINTS) * 100, 100);
 
@@ -185,7 +187,7 @@ export function TokenStats() {
                 />
               </div>
               <p className="text-xs text-muted-foreground">
-                {isLoadingUsdc ? 'Loading LP pool data...' : `${progressPercent.toFixed(2)}% to LP launch • Based on LP pool ($${lpPoolBalance.toFixed(2)}) / $${PRICE_PER_QUESTION}`}
+                {isLoadingUsdc ? 'Loading LP pool data...' : `${progressPercent.toFixed(2)}% to LP launch • Based on LP pool ($${lpPoolBalance.toFixed(2)}) / $${LP_CONTRIBUTION_PER_QUESTION} per mint`}
               </p>
             </div>
 

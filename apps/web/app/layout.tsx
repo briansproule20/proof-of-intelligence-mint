@@ -7,7 +7,7 @@ const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
   title: 'Proof of Intelligence Mint',
-  description: 'Answer AI-powered trivia questions on Base. Pay 1 USDC per question via x402, mint 5000 POIC tokens for correct answers.',
+  description: 'Answer AI-powered trivia questions on Base. Pay 1.25 USDC per question via x402, mint 5000 POIC tokens for correct answers.',
   icons: {
     icon: '/poic-favicon.png',
     apple: '/poic-favicon.png',

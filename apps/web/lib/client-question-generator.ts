@@ -130,7 +130,7 @@ Return only the question data in this format:
     // Check if it's a payment-related error
     if (error instanceof Error) {
       if (error.message.includes('402') || error.message.includes('Payment')) {
-        throw new Error('Payment required: Please sign the transaction to pay for the question (1 USDC). Make sure you have enough USDC in your wallet.');
+        throw new Error('Payment required: Please sign the transaction to pay for the question (1.25 USDC). Make sure you have enough USDC in your wallet.');
       }
       if (error.message.includes('rejected') || error.message.includes('denied')) {
         throw new Error('Transaction rejected: You need to approve the payment to generate a question.');

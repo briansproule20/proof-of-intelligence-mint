@@ -9,7 +9,7 @@ import { QuestionResponse } from '@poim/shared';
  *
  * TODO: Move x402 payment HERE (not on answer submission)
  * EXPECTED FLOW:
- * 1. User pays 1 USDC via x402 → Receives question
+ * 1. User pays 1.25 USDC via x402 → Receives question
  * 2. User submits answer → Receives 5000 POIC if correct (no additional payment)
  *
  * This makes more sense because:

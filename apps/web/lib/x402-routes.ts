@@ -28,7 +28,7 @@ const questionResponseSchema = z.object({
 // Build x402 routes config
 export const x402RoutesConfig: RoutesConfig = {
   '/api/x402/question': {
-    price: 1.0, // 1 USDC per question
+    price: 1.25, // 1.25 USDC per question
     network: 'base',
     config: {
       description: routeDescriptions['/api/x402/question'],

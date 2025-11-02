@@ -18,7 +18,8 @@ import { base } from 'wagmi/chains';
 
 const TOKENS_PER_MINT = 5000;
 const TARGET_MINTS = 100000;
-const PRICE_PER_TOKEN = 0.0002; // $0.0002 per POIC (1 USDC / 5000 POIC)
+const PRICE_PER_QUESTION = 1.25; // $1.25 USDC per question
+const PRICE_PER_TOKEN = 0.00025; // $0.00025 per POIC (1.25 USDC / 5000 POIC)
 
 export function TokenStats() {
   const publicClient = usePublicClient({ chainId: CHAIN_ID });
@@ -120,8 +121,10 @@ export function TokenStats() {
   const totalMinted = totalSupply ? Number(formatUnits(totalSupply, 18)) : 0;
   const lpPoolBalance = usdcBalance ? Number(formatUnits(usdcBalance, 6)) : 0; // USDC has 6 decimals
 
+  // Calculate approximate mints based on LP pool balance divided by price per question
+  const estimatedMintsFromPool = lpPoolBalance / PRICE_PER_QUESTION;
   const numberOfMints = mintCount; // Count from TokensMinted events
-  const progressPercent = Math.min((numberOfMints / TARGET_MINTS) * 100, 100);
+  const progressPercent = Math.min((estimatedMintsFromPool / TARGET_MINTS) * 100, 100);
 
   // Format numbers for display
   const formatNumber = (num: number) => {
@@ -170,9 +173,9 @@ export function TokenStats() {
             {/* Progress Bar - Successful Mints */}
             <div className="space-y-2">
               <div className="flex justify-between text-sm">
-                <span className="font-medium">Successful Mints</span>
+                <span className="font-medium">Estimated Mints</span>
                 <span className="text-muted-foreground">
-                  {isLoadingEvents ? '...' : `${numberOfMints.toLocaleString()} / ${TARGET_MINTS.toLocaleString()}`}
+                  {isLoadingUsdc ? '...' : `${Math.floor(estimatedMintsFromPool).toLocaleString()} / ${TARGET_MINTS.toLocaleString()}`}
                 </span>
               </div>
               <div className="h-4 bg-muted rounded-full overflow-hidden">
@@ -182,7 +185,7 @@ export function TokenStats() {
                 />
               </div>
               <p className="text-xs text-muted-foreground">
-                {isLoadingEvents ? 'Loading events from blockchain...' : `${progressPercent.toFixed(2)}% to LP launch • Counted from TokensMinted events`}
+                {isLoadingUsdc ? 'Loading LP pool data...' : `${progressPercent.toFixed(2)}% to LP launch • Based on LP pool ($${lpPoolBalance.toFixed(2)}) / $${PRICE_PER_QUESTION}`}
               </p>
             </div>
 

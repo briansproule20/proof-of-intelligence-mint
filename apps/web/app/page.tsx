@@ -61,7 +61,7 @@ export default function HomePage() {
           </h2>
 
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-            Answer AI-powered trivia questions on Base. Pay 1 USDC per question via x402, mint 5000 POIC tokens for correct answers.
+            Answer AI-powered trivia questions on Base. Pay 1.25 USDC per question via x402, mint 5000 POIC tokens for correct answers.
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
@@ -131,7 +131,7 @@ export default function HomePage() {
               </div>
               <h3 className="font-semibold text-lg mb-2">x402 Micropayments</h3>
               <p className="text-sm text-muted-foreground">
-                Pay 1 USDC per question using x402 protocol. Your payment flows directly to the Uniswap V4 LP pool, building liquidity as you play.
+                Pay 1.25 USDC per question using x402 protocol. Your payment flows directly to the Uniswap V4 LP pool, building liquidity as you play.
               </p>
             </CardContent>
           </Card>
@@ -196,7 +196,7 @@ export default function HomePage() {
                   <h3 className="font-semibold text-lg">Pay for a Question</h3>
                 </div>
                 <p className="text-muted-foreground">
-                  Each question costs 1 USDC via x402 micropayment protocol. Your payment is automatically added to the LP pool.
+                  Each question costs 1.25 USDC via x402 micropayment protocol. Your payment is automatically added to the LP pool.
                 </p>
               </div>
             </div>

@@ -155,7 +155,7 @@ export default function PlayPage() {
               <ul className="space-y-2 text-sm text-muted-foreground">
                 <li className="flex items-start gap-2">
                   <Sparkles className="h-4 w-4 mt-0.5 text-primary flex-shrink-0" />
-                  <span>Pay 1 USDC per question (via x402)</span>
+                  <span>Pay 1.25 USDC per question (via x402)</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <CheckCircle2 className="h-4 w-4 mt-0.5 text-primary flex-shrink-0" />
@@ -236,7 +236,7 @@ export default function PlayPage() {
                 <div className="space-y-2">
                   <h3 className="text-2xl font-bold">Connect Your Wallet to Play</h3>
                   <p className="text-muted-foreground">
-                    You need a connected wallet to pay for questions (1 USDC via x402) and receive POIC tokens when you answer correctly.
+                    You need a connected wallet to pay for questions (1.25 USDC via x402) and receive POIC tokens when you answer correctly.
                   </p>
                 </div>
                 <div className="flex flex-col gap-3 w-full">

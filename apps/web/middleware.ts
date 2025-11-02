@@ -6,14 +6,14 @@ import { x402RoutesConfig } from './lib/x402-routes';
  *
  * This middleware:
  * 1. Intercepts requests to /api/x402/*
- * 2. Validates payment (1 USDC to server wallet)
+ * 2. Validates payment (1.25 USDC to server wallet)
  * 3. If payment succeeds, allows request to proceed to the catch-all proxy
  * 4. The proxy forwards to actual /api/* endpoints
  *
  * Pattern from: https://github.com/sragss/polymarketeer
  *
  * Payment flow:
- * - User requests /api/x402/question → Pays 1 USDC → Gets question
+ * - User requests /api/x402/question → Pays 1.25 USDC → Gets question
  * - User submits answer to /api/answer/:id → FREE (just verify + mint)
  */
 const RECIPIENT_ADDRESS = (

@@ -14,7 +14,7 @@ import { keccak256, toBytes } from 'viem';
  * Submit an answer to a question
  *
  * TODO: Remove x402 payment from this endpoint
- * CURRENT FLOW (WRONG): User pays 1 USDC → Verify answer → Mint tokens
+ * CURRENT FLOW (WRONG): User pays 1.25 USDC → Verify answer → Mint tokens
  * EXPECTED FLOW: Verify answer → Mint tokens if correct (payment already collected at question time)
  *
  * See X402_INTEGRATION.md for full implementation details
@@ -68,7 +68,7 @@ export async function POST(
       const mintTxHash = await mintTokens(walletAddress, paymentTxHash);
       console.log('[API Answer] Minted tokens, tx:', mintTxHash);
 
-      // 2. Forward 1 USDC to POIC contract for LP pool
+      // 2. Forward 1.25 USDC to POIC contract for LP pool
       const forwardTxHash = await forwardUsdcToContract();
       console.log('[API Answer] Forwarded USDC to contract, tx:', forwardTxHash);
 

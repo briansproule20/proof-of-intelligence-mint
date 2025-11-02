@@ -54,7 +54,9 @@ export default function PlayPage() {
       console.log('[PlayPage] Requesting question via x402 (payment to server wallet)...');
 
       // Wrap fetch with x402 payment handling
-      const fetchWithPayment = wrapFetchWithPayment(fetch, walletClient as any);
+      // Set maxValue to 2 USDC (2000000 in base units with 6 decimals) to allow 1.25 USDC payment
+      const MAX_PAYMENT_USDC = BigInt(2_000_000); // 2 USDC in base units (6 decimals)
+      const fetchWithPayment = wrapFetchWithPayment(fetch, walletClient as any, MAX_PAYMENT_USDC);
 
       // Make payment-required request to server
       // This will trigger the x402 middleware to collect 1.25 USDC payment to server wallet

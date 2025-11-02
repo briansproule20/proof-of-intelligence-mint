@@ -13,11 +13,16 @@ import { keccak256, toBytes } from 'viem';
  *
  * Submit an answer to a question
  *
- * TODO: Remove x402 payment from this endpoint
- * CURRENT FLOW (WRONG): User pays 1.25 USDC → Verify answer → Mint tokens
- * EXPECTED FLOW: Verify answer → Mint tokens if correct (payment already collected at question time)
+ * POLYMARKETEER PATTERN IMPLEMENTED:
+ * ✅ User already paid 1.25 USDC to server wallet when requesting question
+ * ✅ This endpoint just verifies answer and mints tokens if correct
+ * ✅ Server forwards the received USDC to LP pool
  *
- * See X402_INTEGRATION.md for full implementation details
+ * Payment Flow:
+ * 1. User paid 1.25 USDC to server wallet via /api/x402/question
+ * 2. Server received payment and generated question
+ * 3. User answers correctly (this endpoint)
+ * 4. Server mints tokens and forwards received USDC to LP pool
  */
 export async function POST(
   request: NextRequest,

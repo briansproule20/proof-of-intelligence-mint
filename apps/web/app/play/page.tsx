@@ -9,9 +9,9 @@ import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
-import { QuestionResponse, AnswerResponse, EchoQuestion } from '@poim/shared';
+import { AnswerResponse, EchoQuestion } from '@poim/shared';
 import { Loader2, CheckCircle2, XCircle, Sparkles, ArrowLeft, ExternalLink } from 'lucide-react';
-import { generateQuestionWithUserWallet } from '@/lib/client-question-generator';
+import { wrapFetchWithPayment } from 'x402-fetch';
 
 export default function PlayPage() {
   const { address, isConnected } = useAccount();
@@ -22,6 +22,7 @@ export default function PlayPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string>('');
   const [successData, setSuccessData] = useState<{ message: string; txHash?: string } | null>(null);
+  const [correctAnswer, setCorrectAnswer] = useState<string>('');
 
   const loadNextQuestion = () => {
     setSuccessData(null);
@@ -46,41 +47,62 @@ export default function PlayPage() {
       setIsLoading(true);
       setError('');
 
-      if (!walletClient) {
+      if (!address || !walletClient) {
         throw new Error('Wallet not connected');
       }
 
-      console.log('[PlayPage] Generating question with user wallet (x402 payment)...');
+      console.log('[PlayPage] Requesting question via x402 (payment to server wallet)...');
 
-      // Use client-side generation - user pays for AI via x402
-      const generatedQuestion = await generateQuestionWithUserWallet(walletClient, 'medium');
-      console.log('[PlayPage] Received question:', generatedQuestion);
+      // Wrap fetch with x402 payment handling
+      const fetchWithPayment = wrapFetchWithPayment(fetch, walletClient as any);
 
-      // Store the question on the server for later answer verification
-      const questionMeta = (generatedQuestion as any)._meta;
-      if (questionMeta && questionMeta.correctAnswer) {
-        console.log('[PlayPage] Storing question on server...');
+      // Make payment-required request to server
+      // This will trigger the x402 middleware to collect 1.25 USDC payment to server wallet
+      const response = await fetchWithPayment(`/api/x402/question?userId=${address}&difficulty=medium`);
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || `Failed to fetch question: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      console.log('[PlayPage] Received question from server:', data);
+
+      // Server returns { question, _meta: { correctAnswer, explanation } }
+      setQuestion(data.question);
+      setQuestionId(data.question.id);
+
+      // Store correct answer locally for verification
+      // In production, you'd want to store this server-side in a database
+      if (data._meta && data._meta.correctAnswer) {
+        setCorrectAnswer(data._meta.correctAnswer);
+
+        // Store on server for verification
         const storeResponse = await fetch('/api/question/store', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            question: generatedQuestion,
-            correctAnswer: questionMeta.correctAnswer,
+            question: data.question,
+            correctAnswer: data._meta.correctAnswer,
           }),
         });
 
         if (!storeResponse.ok) {
-          console.error('[PlayPage] Failed to store question on server');
-          throw new Error('Failed to store question');
+          console.warn('[PlayPage] Failed to store question on server (continuing anyway)');
         }
-        console.log('[PlayPage] Question stored successfully');
       }
 
-      setQuestion(generatedQuestion);
-      setQuestionId(generatedQuestion.id);
     } catch (err: any) {
       console.error('[PlayPage] Failed to fetch question:', err);
-      setError(err.message || 'Failed to load question');
+
+      // Check for payment-related errors
+      if (err.message.includes('402') || err.message.includes('Payment')) {
+        setError('Payment required: Please approve the 1.25 USDC payment to get a question. Make sure you have enough USDC in your wallet.');
+      } else if (err.message.includes('rejected') || err.message.includes('denied')) {
+        setError('Transaction rejected: You need to approve the payment to generate a question.');
+      } else {
+        setError(err.message || 'Failed to load question. Please try again.');
+      }
     } finally {
       setIsLoading(false);
     }

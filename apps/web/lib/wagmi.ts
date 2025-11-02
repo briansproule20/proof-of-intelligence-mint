@@ -7,7 +7,7 @@ export const config = createConfig({
   connectors: [
     coinbaseWallet({
       appName: 'Proof of Intelligence Mint',
-      preference: 'smartWalletOnly', // Use Smart Wallet for gas sponsorship
+      preference: 'all', // Allow both EOA and Smart Wallet - x402 needs EOA for signing
     }),
     injected(),
     walletConnect({
@@ -15,6 +15,8 @@ export const config = createConfig({
     }),
   ],
   transports: {
-    [base.id]: http(process.env.NEXT_PUBLIC_BASE_MAINNET_RPC_URL),
+    // Use Cloudflare's public RPC which supports CORS from localhost
+    // This is critical for x402-fetch to work properly from the browser
+    [base.id]: http('https://base.gateway.tenderly.co'),
   },
 });

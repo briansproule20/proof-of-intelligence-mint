@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useAccount, useWalletClient } from 'wagmi';
+import { useAccount, useWalletClient, useConfig } from 'wagmi';
+import { getWalletClient } from '@wagmi/core';
 import Link from 'next/link';
 import { WalletConnect } from '@/components/WalletConnect';
 import { TokenBalance } from '@/components/TokenBalance';
@@ -14,8 +15,9 @@ import { Loader2, CheckCircle2, XCircle, Sparkles, ArrowLeft, ExternalLink } fro
 import { wrapFetchWithPayment } from 'x402-fetch';
 
 export default function PlayPage() {
-  const { address, isConnected } = useAccount();
+  const { address, isConnected, connector } = useAccount();
   const { data: walletClient } = useWalletClient();
+  const config = useConfig();
   const [question, setQuestion] = useState<EchoQuestion | null>(null);
   const [questionId, setQuestionId] = useState<string>('');
   const [selectedAnswer, setSelectedAnswer] = useState<string>('');
@@ -52,11 +54,39 @@ export default function PlayPage() {
       }
 
       console.log('[PlayPage] Requesting question via x402 (payment to server wallet)...');
+      console.log('[PlayPage] Wallet client:', {
+        hasWalletClient: !!walletClient,
+        hasAccount: !!walletClient?.account,
+        accountAddress: walletClient?.account?.address,
+        hasChain: !!walletClient?.chain,
+        chainId: walletClient?.chain?.id,
+        hasSignTypedData: !!walletClient?.signTypedData,
+        hasSignTransaction: !!walletClient?.signTransaction,
+      });
+
+      // Try to get a fresh wallet client that's compatible with x402-fetch
+      let activeWalletClient = walletClient;
+      if (connector) {
+        try {
+          const freshClient = await getWalletClient(config, { connector });
+          console.log('[PlayPage] Got fresh wallet client:', {
+            hasAccount: !!freshClient?.account,
+            address: freshClient?.account?.address,
+            chainId: freshClient?.chain?.id,
+          });
+          activeWalletClient = freshClient as any;
+        } catch (err) {
+          console.log('[PlayPage] Could not get fresh client, using existing:', err);
+        }
+      }
 
       // Wrap fetch with x402 payment handling
       // Set maxValue to 2 USDC (2000000 in base units with 6 decimals) to allow 1.25 USDC payment
       const MAX_PAYMENT_USDC = BigInt(2_000_000); // 2 USDC in base units (6 decimals)
-      const fetchWithPayment = wrapFetchWithPayment(fetch, walletClient as any, MAX_PAYMENT_USDC);
+
+      console.log('[PlayPage] Creating wrapped fetch with max value:', MAX_PAYMENT_USDC.toString());
+      const fetchWithPayment = wrapFetchWithPayment(fetch, activeWalletClient as any, MAX_PAYMENT_USDC);
+      console.log('[PlayPage] Wrapped fetch created successfully');
 
       // Make payment-required request to server
       // This will trigger the x402 middleware to collect 1.25 USDC payment to server wallet
@@ -71,7 +101,37 @@ export default function PlayPage() {
         headers: {
           'Content-Type': 'application/json',
         },
+      }).catch((err: any) => {
+        console.error('[PlayPage] fetchWithPayment threw error:', {
+          message: err.message,
+          name: err.name,
+          stack: err.stack,
+          cause: err.cause,
+        });
+        throw err;
       });
+
+      console.log('[PlayPage] Received response:', {
+        ok: response.ok,
+        status: response.status,
+        statusText: response.statusText,
+      });
+
+      // If 402, check the response headers and body
+      if (response.status === 402) {
+        console.log('[PlayPage] 402 response detected - checking payment requirements');
+        console.log('[PlayPage] Response headers:', Object.fromEntries(response.headers.entries()));
+
+        const responseText = await response.clone().text();
+        console.log('[PlayPage] 402 Response body:', responseText);
+
+        try {
+          const responseJson = JSON.parse(responseText);
+          console.log('[PlayPage] 402 Response JSON:', responseJson);
+        } catch (e) {
+          console.log('[PlayPage] Response is not JSON');
+        }
+      }
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
@@ -107,14 +167,24 @@ export default function PlayPage() {
 
     } catch (err: any) {
       console.error('[PlayPage] Failed to fetch question:', err);
+      console.error('[PlayPage] Error details:', {
+        message: err.message,
+        stack: err.stack,
+        name: err.name,
+        cause: err.cause,
+      });
 
       // Check for payment-related errors
       if (err.message.includes('402') || err.message.includes('Payment')) {
         setError('Payment required: Please approve the 1.25 USDC payment to get a question. Make sure you have enough USDC in your wallet.');
       } else if (err.message.includes('rejected') || err.message.includes('denied')) {
         setError('Transaction rejected: You need to approve the payment to generate a question.');
+      } else if (err.message.includes('User rejected') || err.message.includes('User denied')) {
+        setError('You cancelled the payment. Please try again when ready.');
+      } else if (err.message.includes('insufficient funds')) {
+        setError('Insufficient USDC balance. You need at least 1.25 USDC on Base network.');
       } else {
-        setError(err.message || 'Failed to load question. Please try again.');
+        setError(`Error: ${err.message || 'Failed to load question. Please check console for details.'}`);
       }
     } finally {
       setIsLoading(false);

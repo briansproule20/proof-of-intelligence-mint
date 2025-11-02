@@ -43,6 +43,7 @@ export async function GET(request: NextRequest) {
     const difficulty = (request.nextUrl.searchParams.get('difficulty') || 'medium') as 'easy' | 'medium' | 'hard';
 
     console.log(`[API Question] Generating question for user ${userId}, difficulty: ${difficulty}`);
+    console.log('[API Question] Echo App ID configured:', !!process.env.ECHO_APP_ID);
 
     const difficultyConfig = DIFFICULTY_CONFIGS[difficulty];
 
@@ -76,12 +77,14 @@ Return only the question data in this format:
 }`;
 
     // Generate question using server's Echo/Anthropic credits
+    console.log('[API Question] Calling Anthropic API...');
     const { text } = await generateText({
       model: anthropic('claude-sonnet-4-5-20250929'),
       prompt,
       temperature: 0.8,
       maxOutputTokens: 500,
     });
+    console.log('[API Question] Anthropic API response received');
 
     console.log('[API Question] Generated text from AI');
 
@@ -133,10 +136,17 @@ Return only the question data in this format:
     return NextResponse.json(response);
   } catch (error) {
     console.error('[API Question] Error generating question:', error);
+    console.error('[API Question] Error details:', {
+      name: error instanceof Error ? error.name : 'Unknown',
+      message: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+    });
+
     return NextResponse.json(
       {
         error: 'Failed to generate question',
-        message: error instanceof Error ? error.message : 'Unknown error'
+        message: error instanceof Error ? error.message : 'Unknown error',
+        details: process.env.NODE_ENV === 'development' ? String(error) : undefined,
       },
       { status: 500 }
     );

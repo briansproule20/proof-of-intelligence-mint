@@ -26,7 +26,7 @@ export class QuestionGenerator {
   private readonly MAX_FAILURES = 3; // Circuit breaker: stop after 3 failures
 
   /**
-   * Initialize the Echo OpenAI provider with API key
+   * Initialize the Echo Anthropic provider with API key
    */
   async initialize(): Promise<void> {
     if (this.initialized) return;
@@ -76,8 +76,8 @@ export class QuestionGenerator {
       await this.initialize();
     }
 
-    if (!this.openai) {
-      throw new Error('OpenAI provider not initialized');
+    if (!this.anthropic) {
+      throw new Error('Anthropic provider not initialized');
     }
 
     const difficultyConfig = DIFFICULTY_CONFIGS[difficulty];

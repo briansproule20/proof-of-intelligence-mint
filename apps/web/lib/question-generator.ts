@@ -121,10 +121,9 @@ Return only the question data in this format:
       const startTime = Date.now();
 
       const { text } = await generateText({
-        model: this.anthropic!('claude-sonnet-4-20250514'),
+        model: this.anthropic('claude-sonnet-4-20250514'),
         prompt,
         temperature: 0.8, // Add some creativity
-        maxTokens: 500,
       });
 
       const duration = Date.now() - startTime;

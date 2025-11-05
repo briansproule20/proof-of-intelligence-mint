@@ -10,7 +10,7 @@
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
-    "@ai-sdk/anthropic": "^1.0.0",
+    "@ai-sdk/anthropic": "^2.0.41",
     "@coinbase/cdp-sdk": "^1.38.4",
     "@coinbase/x402": "^0.7.0",
     "@merit-systems/ai-x402": "^0.1.1",

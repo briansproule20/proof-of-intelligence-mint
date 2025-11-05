@@ -35,6 +35,14 @@ export function TokenStats() {
     chainId: CHAIN_ID,
   });
 
+  // Fetch actual mint count from contract (not totalSupply which includes pre-minted LP seed)
+  const { data: contractMintCount, isLoading: isLoadingMintCount } = useReadContract({
+    address: CONTRACT_ADDRESS,
+    abi: POIC_ABI,
+    functionName: 'mintCount',
+    chainId: CHAIN_ID,
+  });
+
   // Fetch USDC balance of server wallet (LP pool)
   const { data: usdcBalance, isLoading: isLoadingUsdc } = useReadContract({
     address: USDC_ADDRESS,
@@ -122,9 +130,9 @@ export function TokenStats() {
   const totalMinted = totalSupply ? Number(formatUnits(totalSupply, 18)) : 0;
   const lpPoolBalance = usdcBalance ? Number(formatUnits(usdcBalance, 6)) : 0; // USDC has 6 decimals
 
-  // Calculate actual mints from total circulation divided by tokens per mint
-  // Each successful answer mints 5000 POIC tokens
-  const actualMints = Math.floor(totalMinted / TOKENS_PER_MINT);
+  // Use direct mint count from contract (not calculated from totalSupply)
+  // contractMintCount tracks actual user mints, totalSupply includes pre-minted LP seed
+  const actualMints = contractMintCount ? Number(contractMintCount) : 0;
   const progressPercent = Math.min((actualMints / TARGET_MINTS) * 100, 100);
 
   // Format numbers for display
@@ -176,7 +184,7 @@ export function TokenStats() {
               <div className="flex justify-between text-sm">
                 <span className="font-medium">Successful Mints</span>
                 <span className="text-muted-foreground">
-                  {isLoadingSupply ? '...' : `${actualMints.toLocaleString()} / ${TARGET_MINTS.toLocaleString()}`}
+                  {isLoadingMintCount ? '...' : `${actualMints.toLocaleString()} / ${TARGET_MINTS.toLocaleString()}`}
                 </span>
               </div>
               <div className="h-4 bg-muted rounded-full overflow-hidden">
@@ -186,7 +194,7 @@ export function TokenStats() {
                 />
               </div>
               <p className="text-xs text-muted-foreground">
-                {isLoadingSupply ? 'Loading mint data...' : `${progressPercent.toFixed(3)}% to LP launch • ${(TARGET_MINTS - actualMints).toLocaleString()} mints remaining`}
+                {isLoadingMintCount ? 'Loading mint data...' : `${progressPercent.toFixed(3)}% to LP launch • ${(TARGET_MINTS - actualMints).toLocaleString()} mints remaining`}
               </p>
             </div>
 

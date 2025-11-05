@@ -28,6 +28,13 @@ export const POIC_ABI = [
   },
   {
     type: 'function',
+    name: 'mintCount',
+    stateMutability: 'view',
+    inputs: [],
+    outputs: [{ name: '', type: 'uint256' }],
+  },
+  {
+    type: 'function',
     name: 'name',
     stateMutability: 'view',
     inputs: [],

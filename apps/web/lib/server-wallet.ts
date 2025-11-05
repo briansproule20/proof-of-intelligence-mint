@@ -1,4 +1,4 @@
-import { createWalletClient, http, parseAbi, parseUnits } from 'viem';
+import { createWalletClient, createPublicClient, http, parseAbi, parseUnits } from 'viem';
 import { base } from 'viem/chains';
 import { privateKeyToAccount } from 'viem/accounts';
 import { CONTRACT_ADDRESS } from './contract';
@@ -14,9 +14,15 @@ if (!privateKey) {
 // Create account from private key
 const account = privateKeyToAccount(privateKey as `0x${string}`);
 
-// Create wallet client
+// Create wallet client (for writes)
 const walletClient = createWalletClient({
   account,
+  chain: base,
+  transport: http(),
+});
+
+// Create public client (for reads)
+const publicClient = createPublicClient({
   chain: base,
   transport: http(),
 });
@@ -101,4 +107,76 @@ export async function mintTokens(
  */
 export function getServerWalletAddress(): string {
   return account.address;
+}
+
+/**
+ * Get server wallet's USDC balance
+ */
+export async function getServerUsdcBalance(): Promise<bigint> {
+  try {
+    const balance = await publicClient.readContract({
+      address: USDC_ADDRESS_BASE as `0x${string}`,
+      abi: ERC20_ABI,
+      functionName: 'balanceOf',
+      args: [account.address],
+    });
+
+    console.log('[Server Wallet] Current USDC balance:', balance.toString());
+    return balance;
+  } catch (error) {
+    console.error('[Server Wallet] Failed to get USDC balance:', error);
+    throw error;
+  }
+}
+
+/**
+ * Sweep all accumulated USDC to contract (minus reserve)
+ * @param reserveAmount Amount to keep in server wallet for gas (default: 5 USDC)
+ * @returns Transaction hash, or null if nothing to sweep
+ */
+export async function sweepUsdcToContract(
+  reserveAmount: bigint = BigInt(5_000_000) // 5 USDC reserve
+): Promise<string | null> {
+  try {
+    const balance = await getServerUsdcBalance();
+
+    // Calculate amount to sweep (balance - reserve)
+    const amountToSweep = balance > reserveAmount
+      ? balance - reserveAmount
+      : BigInt(0);
+
+    // Only sweep if we have meaningful amount (> 1 USDC)
+    if (amountToSweep < BigInt(1_000_000)) {
+      console.log('[Server Wallet] Insufficient balance to sweep:', {
+        balance: balance.toString(),
+        reserve: reserveAmount.toString(),
+        wouldSweep: amountToSweep.toString(),
+      });
+      return null;
+    }
+
+    console.log('[Server Wallet] Sweeping accumulated USDC:', {
+      totalBalance: balance.toString(),
+      reserve: reserveAmount.toString(),
+      sweeping: amountToSweep.toString(),
+    });
+
+    // Transfer to contract
+    const hash = await walletClient.writeContract({
+      address: USDC_ADDRESS_BASE as `0x${string}`,
+      abi: ERC20_ABI,
+      functionName: 'transfer',
+      args: [CONTRACT_ADDRESS, amountToSweep],
+    });
+
+    console.log(`[Server Wallet] ✅ Swept ${amountToSweep.toString()} USDC to contract, tx: ${hash}`);
+    return hash;
+  } catch (error) {
+    console.error('[Server Wallet] ❌ Failed to sweep USDC:', {
+      errorMessage: error instanceof Error ? error.message : 'Unknown error',
+      errorStack: error instanceof Error ? error.stack : undefined,
+      errorName: error instanceof Error ? error.name : 'Unknown',
+    });
+    throw error;
+  }
 }

@@ -10,7 +10,7 @@
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
-    "@ai-sdk/openai": "^0.0.66",
+    "@ai-sdk/openai": "^1.0.0",
     "@coinbase/cdp-sdk": "^1.38.4",
     "@coinbase/x402": "^0.7.0",
     "@merit-systems/ai-x402": "^0.1.1",

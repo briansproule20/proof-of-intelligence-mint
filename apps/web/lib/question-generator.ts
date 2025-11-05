@@ -1,6 +1,7 @@
 import { createAnthropic } from '@ai-sdk/anthropic';
 import { generateText } from 'ai';
 import type { EchoQuestion } from '@poim/shared';
+import { getRandomCategory } from './trivia-categories';
 
 
 // Difficulty levels with their characteristics
@@ -82,12 +83,19 @@ export class QuestionGenerator {
 
     const difficultyConfig = DIFFICULTY_CONFIGS[difficulty];
 
+    // Add randomness to prevent caching and ensure unique questions
+    const randomSeed = Date.now() + Math.random();
+
+    // Use the comprehensive 163-category system for maximum variety
+    const randomCategory = getRandomCategory();
+
     // Create the prompt for question generation
-    const prompt = `Generate a single multiple-choice trivia question.
+    const prompt = `Generate a unique multiple-choice trivia question (request #${randomSeed}).
 
 Difficulty Level: ${difficulty.toUpperCase()}
 Difficulty Description: ${difficultyConfig.description}
 Complexity: ${difficultyConfig.complexity}
+Suggested Category (but feel free to vary): ${randomCategory}
 
 CRITICAL RULES:
   - Provide EXACTLY 4 answer options (A, B, C, D in that order)
@@ -95,6 +103,7 @@ CRITICAL RULES:
   - NEVER include the answer within the question prompt itself
   - Use clear phrasing; avoid double negatives
   - All questions must be factually accurate
+  - Generate DIFFERENT questions each time - do not repeat previous questions
   - Vary topics across different categories (history, science, geography, culture, arts, sports, technology, nature, etc.)
 
 Requirements:
@@ -103,6 +112,7 @@ Requirements:
 - The 3 incorrect answers should be plausible but wrong
 - Avoid overly obscure or niche topics unless difficulty is hard
 - Question should be appropriate for a global audience
+- Make this question UNIQUE and different from typical trivia questions
 
 Return only the question data in this format:
 {

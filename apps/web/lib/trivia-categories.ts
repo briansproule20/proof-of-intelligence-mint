@@ -200,7 +200,7 @@ export const TRIVIA_CATEGORIES = [
 ] as const;
 
 /**
- * Get a random category from the 160 available categories
+ * Get a random category from the 163 available categories
  */
 export function getRandomCategory(): string {
   const randomIndex = Math.floor(Math.random() * TRIVIA_CATEGORIES.length);

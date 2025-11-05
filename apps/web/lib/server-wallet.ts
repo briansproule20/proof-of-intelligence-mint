@@ -57,10 +57,9 @@ export async function forwardUsdcToContract(amount: string = LP_CONTRIBUTION): P
     return hash;
   } catch (error) {
     console.error('[Server Wallet] ❌ Failed to forward USDC:', {
-      error,
       errorMessage: error instanceof Error ? error.message : 'Unknown error',
       errorStack: error instanceof Error ? error.stack : undefined,
-      errorDetails: JSON.stringify(error, null, 2),
+      errorName: error instanceof Error ? error.name : 'Unknown',
     });
     throw error; // Re-throw original error for better debugging
   }

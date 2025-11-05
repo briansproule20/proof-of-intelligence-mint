@@ -377,7 +377,7 @@ export default function PlayPage() {
 
       const data: AnswerResponse = await response.json();
 
-      if (response.ok) {
+      if (data.correct) {
         // Subtle confetti celebration
         confetti({
           particleCount: 50,

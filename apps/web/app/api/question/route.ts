@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getQuestionGenerator } from '@/lib/question-generator';
 import { hasUserSeenQuestion, markQuestionAsAsked } from '@/lib/question-tracker';
+import { storeQuestion } from '@/lib/supabase';
 
 /**
  * GET /api/question
@@ -34,22 +35,30 @@ export async function GET(request: NextRequest) {
 
     // Use the new QuestionGenerator with Echo API key
     const generator = getQuestionGenerator();
-    const question = await generator.generateQuestion(userId, difficulty);
+    const generatedQuestion = await generator.generateQuestion(userId, difficulty);
 
     // Mark this question as asked to this user
-    markQuestionAsAsked(userId, question.question);
+    markQuestionAsAsked(userId, generatedQuestion.question);
 
-    console.log('[API Question] Successfully generated question:', question.id);
+    // Store question in Supabase (with correct answer)
+    const questionId = await storeQuestion({
+      questionText: generatedQuestion.question,
+      options: generatedQuestion.options,
+      correctAnswer: (generatedQuestion as any)._meta.correctAnswer,
+      explanation: (generatedQuestion as any)._meta.explanation,
+      difficulty: difficulty,
+      category: (generatedQuestion as any)._meta.category || 'General Knowledge',
+      userId: userId,
+    });
 
-    // Return the question with metadata
+    console.log('[API Question] Successfully generated and stored question:', questionId);
+
+    // Return ONLY the question (NO correct answer or _meta)
     const response = {
-      question: {
-        id: question.id,
-        question: question.question,
-        options: question.options,
-        difficulty: question.difficulty,
-      },
-      _meta: (question as any)._meta,
+      id: questionId,
+      question: generatedQuestion.question,
+      options: generatedQuestion.options,
+      difficulty: difficulty,
     };
 
     // Disable caching to ensure fresh questions each time

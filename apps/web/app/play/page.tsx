@@ -29,15 +29,11 @@ export default function PlayPage() {
   const [questionId, setQuestionId] = useState<string>('');
   const [selectedAnswer, setSelectedAnswer] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
-  const [isMinting, setIsMinting] = useState(false);
   const [error, setError] = useState<string>('');
-  const [answerCorrect, setAnswerCorrect] = useState<boolean | null>(null);
   const [successData, setSuccessData] = useState<{ message: string; txHash?: string; usdcTxHash?: string } | null>(null);
-  const [correctAnswer, setCorrectAnswer] = useState<string>('');
 
   const loadNextQuestion = () => {
     setSuccessData(null);
-    setAnswerCorrect(null);
     setError('');
     setSelectedAnswer('');
     setQuestion(null); // Clear current question to show loader
@@ -279,29 +275,10 @@ export default function PlayPage() {
       const data = await response.json();
       console.log('[PlayPage] Received question from server:', data);
 
-      // Server returns { question, _meta: { correctAnswer, explanation } }
-      setQuestion(data.question);
-      setQuestionId(data.question.id);
-
-      // Store correct answer locally for verification
-      // In production, you'd want to store this server-side in a database
-      if (data._meta && data._meta.correctAnswer) {
-        setCorrectAnswer(data._meta.correctAnswer);
-
-        // Store on server for verification
-        const storeResponse = await fetch('/api/question/store', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            question: data.question,
-            correctAnswer: data._meta.correctAnswer,
-          }),
-        });
-
-        if (!storeResponse.ok) {
-          console.warn('[PlayPage] Failed to store question on server (continuing anyway)');
-        }
-      }
+      // Server returns { id, question, options, difficulty }
+      // Correct answer is stored in Supabase (not exposed to client)
+      setQuestion(data);
+      setQuestionId(data.id);
 
     } catch (err: any) {
       console.error('[PlayPage] Failed to fetch question:', err);
@@ -330,48 +307,19 @@ export default function PlayPage() {
   };
 
   const handleSubmitAnswer = async () => {
-    if (!selectedAnswer || !questionId || !question) return;
+    if (!selectedAnswer || !questionId || !question || !address) return;
 
     try {
       setIsLoading(true);
       setError('');
 
-      // Just verify the answer (don't mint yet)
-      const response = await fetch(`/api/answer/${questionId}/verify`, {
+      // New unified API: verify answer and mint tokens in one call
+      const response = await fetch('/api/answer', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          questionId,
           answer: selectedAnswer,
-        }),
-      });
-
-      const data = await response.json();
-
-      if (data.correct) {
-        setAnswerCorrect(true);
-      } else {
-        setAnswerCorrect(false);
-        setError(data.message || 'Incorrect answer. Try again!');
-      }
-    } catch (err) {
-      setError('Failed to verify answer');
-      console.error(err);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleMint = async () => {
-    if (!address || !questionId) return;
-
-    try {
-      setIsMinting(true);
-      setError('');
-
-      const response = await fetch(`/api/answer/${questionId}/mint`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
           walletAddress: address,
         }),
       });
@@ -379,6 +327,7 @@ export default function PlayPage() {
       const data: AnswerResponse = await response.json();
 
       if (data.correct) {
+        // Correct answer! Tokens minted automatically
         // Subtle confetti celebration
         confetti({
           particleCount: 50,
@@ -394,13 +343,14 @@ export default function PlayPage() {
           usdcTxHash: data.usdcTxHash,
         });
       } else {
-        setError(data.message || 'Failed to mint tokens');
+        // Incorrect answer
+        setError(data.message || 'Incorrect answer. Try again!');
       }
     } catch (err) {
-      setError('Failed to mint tokens');
+      setError('Failed to submit answer');
       console.error(err);
     } finally {
-      setIsMinting(false);
+      setIsLoading(false);
     }
   };
 
@@ -528,7 +478,6 @@ export default function PlayPage() {
                         onClick={() => {
                           // Reset game state and navigate to wallet section
                           setSuccessData(null);
-                          setAnswerCorrect(null);
                           setError('');
                           setSelectedAnswer('');
                           setQuestion(null);
@@ -640,50 +589,7 @@ export default function PlayPage() {
                   )}
                 </CardContent>
                 <CardFooter className="flex-col gap-2">
-                  {answerCorrect && !successData ? (
-                    /* Correct Answer - Show Mint Button */
-                    <div className="w-full space-y-4">
-                      <div className="flex items-center gap-2 p-4 rounded-lg bg-green-50 dark:bg-green-950/20 border-2 border-green-500/50">
-                        <CheckCircle2 className="h-6 w-6 text-green-600 dark:text-green-400 flex-shrink-0" />
-                        <div>
-                          <p className="font-semibold text-green-700 dark:text-green-400">
-                            Correct Answer!
-                          </p>
-                          <p className="text-sm text-green-600 dark:text-green-500">
-                            Click below to mint your 5000 POIC tokens
-                          </p>
-                        </div>
-                      </div>
-                      <motion.div
-                        initial={{ scale: 0.9, opacity: 0 }}
-                        animate={{ scale: 1, opacity: 1 }}
-                        transition={{
-                          type: "spring",
-                          stiffness: 260,
-                          damping: 20
-                        }}
-                      >
-                        <Button
-                          onClick={handleMint}
-                          disabled={isMinting}
-                          size="lg"
-                          className="w-full relative overflow-hidden"
-                        >
-                          {isMinting ? (
-                            <>
-                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                              Minting Tokens...
-                            </>
-                          ) : (
-                            <>
-                              <Sparkles className="mr-2 h-4 w-4" />
-                              Mint Tokens
-                            </>
-                          )}
-                        </Button>
-                      </motion.div>
-                    </div>
-                  ) : !error && !answerCorrect ? (
+                  {!error && !successData ? (
                     <>
                       <Button
                         onClick={handleSubmitAnswer}
@@ -694,12 +600,12 @@ export default function PlayPage() {
                         {isLoading ? (
                           <>
                             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            Checking Answer...
+                            Verifying & Minting...
                           </>
                         ) : !isConnected ? (
                           'Connect Wallet to Submit'
                         ) : (
-                          'Submit Answer'
+                          'Submit Answer & Mint'
                         )}
                       </Button>
                       {!isConnected && (

@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Sparkles, Wallet, Brain, Coins, ArrowRight, CheckCircle2 } from 'lucide-react';
@@ -17,7 +18,13 @@ export default function HomePage() {
       <header className="border-b">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Sparkles className="h-6 w-6 text-primary" />
+            <Image
+              src="/poic-favicon.png"
+              alt="POIC Coin"
+              width={32}
+              height={32}
+              className="h-8 w-8"
+            />
             <span className="font-bold text-xl">POIM</span>
           </div>
           <nav className="flex items-center gap-6">

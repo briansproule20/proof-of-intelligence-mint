@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useAccount, useWalletClient, useConfig } from 'wagmi';
 import { getWalletClient } from '@wagmi/core';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { WalletConnect } from '@/components/WalletConnect';
 import { TokenBalance } from '@/components/TokenBalance';
@@ -411,7 +412,13 @@ export default function PlayPage() {
           <div className="flex items-center justify-between">
             <Link href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
               <ArrowLeft className="h-4 w-4" />
-              <Sparkles className="h-5 w-5 text-primary" />
+              <Image
+                src="/poic-favicon.png"
+                alt="POIC Coin"
+                width={32}
+                height={32}
+                className="h-8 w-8"
+              />
               <span className="font-bold">POIM</span>
             </Link>
             <WalletConnect />

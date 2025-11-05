@@ -1,4 +1,4 @@
-import { createOpenAI } from '@ai-sdk/openai';
+import { createAnthropic } from '@ai-sdk/anthropic';
 import { generateText } from 'ai';
 import type { EchoQuestion } from '@poim/shared';
 
@@ -20,7 +20,7 @@ const DIFFICULTY_CONFIGS = {
 } as const;
 
 export class QuestionGenerator {
-  private openai: ReturnType<typeof createOpenAI> | null = null;
+  private anthropic: ReturnType<typeof createAnthropic> | null = null;
   private initialized = false;
   private failureCount = 0;
   private readonly MAX_FAILURES = 3; // Circuit breaker: stop after 3 failures
@@ -38,8 +38,8 @@ export class QuestionGenerator {
     }
 
     try {
-      // Create OpenAI client pointing to Echo router
-      this.openai = createOpenAI({
+      // Create Anthropic client pointing to Echo router
+      this.anthropic = createAnthropic({
         apiKey,
         baseURL: 'https://echo.router.merit.systems',
       });
@@ -51,7 +51,7 @@ export class QuestionGenerator {
     } catch (error) {
       console.error('[QuestionGenerator] Initialization failed:', error);
       throw new Error(
-        'Failed to initialize Echo OpenAI client. Please check ECHO_API_KEY in .env.local'
+        'Failed to initialize Echo Anthropic client. Please check ECHO_API_KEY in .env.local'
       );
     }
   }
@@ -121,7 +121,7 @@ Return only the question data in this format:
       const startTime = Date.now();
 
       const { text } = await generateText({
-        model: this.openai!('claude-sonnet-4-20250514'),
+        model: this.anthropic!('claude-sonnet-4-20250514'),
         prompt,
         temperature: 0.8, // Add some creativity
         maxTokens: 500,

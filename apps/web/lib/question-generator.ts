@@ -1,55 +1,7 @@
-import { createX402OpenAI, createX402OpenAIWithoutPayment } from '@merit-systems/ai-x402/server';
-import { CdpClient } from '@coinbase/cdp-sdk';
+import { createOpenAI } from '@ai-sdk/openai';
 import { generateText } from 'ai';
 import type { EchoQuestion } from '@poim/shared';
-import { createWalletClient, custom, http } from 'viem';
-import { base } from 'viem/chains';
-import { privateKeyToAccount } from 'viem/accounts';
 
-// CDP Account to Viem WalletClient converter
-function createCdpWalletClient(cdpAccount: any) {
-  // Create a custom transport that uses CDP's signing
-  const customTransport = custom({
-    async request({ method, params }: any) {
-      // For signing requests, use CDP account
-      if (method === 'personal_sign') {
-        const [message] = params;
-        const signature = await cdpAccount.signMessage(message);
-        return signature;
-      }
-      // For other requests, throw - we only need signing for x402
-      throw new Error(`Unsupported method: ${method}`);
-    },
-  });
-
-  // Create viem account from CDP account
-  const viemAccount = {
-    address: cdpAccount.address as `0x${string}`,
-    type: 'local' as const,
-    source: 'custom' as const,
-    signMessage: async ({ message }: { message: string | { raw: string | Uint8Array } }) => {
-      const messageToSign = typeof message === 'string' ? message : message.raw;
-      const signature = await cdpAccount.signMessage(messageToSign);
-      return signature as `0x${string}`;
-    },
-    signTransaction: async () => {
-      throw new Error('Transaction signing not supported');
-    },
-    signTypedData: async (typedData: any) => {
-      // x402 uses EIP-712 typed data signing for payment authorization
-      // CDP SDK supports this via signTypedData
-      const signature = await cdpAccount.signTypedData(typedData);
-      return signature as `0x${string}`;
-    },
-  };
-
-  // Create wallet client with CDP account
-  return createWalletClient({
-    account: viemAccount as any,
-    chain: base,
-    transport: customTransport,
-  });
-}
 
 // Difficulty levels with their characteristics
 const DIFFICULTY_CONFIGS = {
@@ -68,43 +20,38 @@ const DIFFICULTY_CONFIGS = {
 } as const;
 
 export class QuestionGenerator {
-  private openai: ReturnType<typeof createX402OpenAI> | null = null;
-  private cdpClient: CdpClient | null = null;
+  private openai: ReturnType<typeof createOpenAI> | null = null;
   private initialized = false;
   private failureCount = 0;
   private readonly MAX_FAILURES = 3; // Circuit breaker: stop after 3 failures
 
   /**
-   * Initialize the x402 + Echo OpenAI provider
+   * Initialize the Echo OpenAI provider with API key
    */
   async initialize(): Promise<void> {
     if (this.initialized) return;
 
-    const privateKey = process.env.MINT_SIGNER_PRIVATE_KEY;
+    const apiKey = process.env.ECHO_API_KEY;
 
-    if (!privateKey) {
-      throw new Error('Missing MINT_SIGNER_PRIVATE_KEY for x402 payments');
+    if (!apiKey) {
+      throw new Error('Missing ECHO_API_KEY environment variable');
     }
 
     try {
-      // Create viem wallet client from private key
-      const account = privateKeyToAccount(privateKey as `0x${string}`);
-      const walletClient = createWalletClient({
-        account,
-        chain: base,
-        transport: http(process.env.NEXT_PUBLIC_BASE_MAINNET_RPC_URL),
+      // Create OpenAI client pointing to Echo router
+      this.openai = createOpenAI({
+        apiKey,
+        baseURL: 'https://echo.router.merit.systems',
       });
 
-      // Initialize x402 OpenAI provider (routes through Echo)
-      this.openai = createX402OpenAI(walletClient as any);
       this.initialized = true;
 
-      console.log('[QuestionGenerator] Successfully initialized with wallet:', account.address);
-      console.log('[QuestionGenerator] Using x402 payments via Echo router');
+      console.log('[QuestionGenerator] Successfully initialized with Echo API key mode');
+      console.log('[QuestionGenerator] Using Echo router for faster question generation');
     } catch (error) {
       console.error('[QuestionGenerator] Initialization failed:', error);
       throw new Error(
-        'Failed to initialize x402 wallet. Please check your credentials in .env.local'
+        'Failed to initialize Echo OpenAI client. Please check ECHO_API_KEY in .env.local'
       );
     }
   }
@@ -169,15 +116,15 @@ Return only the question data in this format:
       console.log(`[QuestionGenerator] Generating ${difficulty} question for user ${userId}...`);
       console.log('[QuestionGenerator] Prompt:', prompt.substring(0, 200) + '...');
 
-      // Generate text using x402-powered OpenAI via Echo
-      console.log('[QuestionGenerator] Calling generateText with x402 + Echo...');
+      // Generate text using Echo API key mode (much faster than x402!)
+      console.log('[QuestionGenerator] Calling generateText with Echo API key...');
       const startTime = Date.now();
 
       const { text } = await generateText({
-        model: this.openai('claude-sonnet-4-5-20250929'),
+        model: this.openai!('claude-sonnet-4-20250514'),
         prompt,
         temperature: 0.8, // Add some creativity
-        maxOutputTokens: 500,
+        maxTokens: 500,
       });
 
       const duration = Date.now() - startTime;

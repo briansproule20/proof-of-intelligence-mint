@@ -41,11 +41,16 @@ export async function GET(
       headers: request.headers,
     });
 
-    // Return the response with original status and headers
-    return new NextResponse(response.body, {
+    // Get the response body as text to avoid compression issues
+    const data = await response.json();
+
+    // Return the response with explicit no-compression headers
+    return NextResponse.json(data, {
       status: response.status,
-      statusText: response.statusText,
-      headers: response.headers,
+      headers: {
+        'Content-Type': 'application/json',
+        'Content-Encoding': 'identity',
+      },
     });
   } catch (error) {
     console.error('[x402 Proxy] Error forwarding request:', error);

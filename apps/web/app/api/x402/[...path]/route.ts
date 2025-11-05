@@ -12,6 +12,11 @@ import { NextRequest, NextResponse } from 'next/server';
  *
  * Pattern from: https://github.com/sragss/polymarketeer
  */
+
+// Force dynamic rendering - no caching
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export async function GET(
   request: NextRequest,
   context: { params: Promise<{ path: string[] }> }

@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Sparkles, Wallet, Brain, Coins, ArrowRight, CheckCircle2 } from 'lucide-react';
 import { WalletConnect } from '@/components/WalletConnect';
 import { TokenStats } from '@/components/TokenStats';
+import DepartmentOfCognitionWallet from '@/components/DepartmentOfCognitionWallet';
 import { useAccount } from 'wagmi';
 
 export default function HomePage() {
@@ -22,6 +23,9 @@ export default function HomePage() {
           <nav className="flex items-center gap-6">
             <Link href="#about" className="hidden md:block text-sm text-muted-foreground hover:text-foreground transition-colors">
               About
+            </Link>
+            <Link href="#wallet" className="hidden md:block text-sm text-muted-foreground hover:text-foreground transition-colors">
+              Wallet
             </Link>
             <Link href="#features" className="hidden md:block text-sm text-muted-foreground hover:text-foreground transition-colors">
               Features
@@ -113,6 +117,9 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+
+      {/* Department of Cognition Wallet Section */}
+      <DepartmentOfCognitionWallet />
 
       {/* Features Section */}
       <section id="features" className="container mx-auto px-4 py-12 md:py-20">

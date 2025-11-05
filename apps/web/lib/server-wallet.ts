@@ -39,6 +39,13 @@ const ERC20_ABI = parseAbi([
  */
 export async function forwardUsdcToContract(amount: string = LP_CONTRIBUTION): Promise<string> {
   try {
+    console.log('[Server Wallet] Attempting to forward USDC:', {
+      from: account.address,
+      to: CONTRACT_ADDRESS,
+      amount,
+      usdcContract: USDC_ADDRESS_BASE,
+    });
+
     const hash = await walletClient.writeContract({
       address: USDC_ADDRESS_BASE as `0x${string}`,
       abi: ERC20_ABI,
@@ -46,11 +53,16 @@ export async function forwardUsdcToContract(amount: string = LP_CONTRIBUTION): P
       args: [CONTRACT_ADDRESS, BigInt(amount)],
     });
 
-    console.log(`[Server Wallet] Forwarded ${amount} USDC to contract, tx: ${hash}`);
+    console.log(`[Server Wallet] ✅ Forwarded ${amount} USDC to contract, tx: ${hash}`);
     return hash;
   } catch (error) {
-    console.error('[Server Wallet] Failed to forward USDC:', error);
-    throw new Error('Failed to forward USDC to contract');
+    console.error('[Server Wallet] ❌ Failed to forward USDC:', {
+      error,
+      errorMessage: error instanceof Error ? error.message : 'Unknown error',
+      errorStack: error instanceof Error ? error.stack : undefined,
+      errorDetails: JSON.stringify(error, null, 2),
+    });
+    throw error; // Re-throw original error for better debugging
   }
 }
 

@@ -122,11 +122,10 @@ export function TokenStats() {
   const totalMinted = totalSupply ? Number(formatUnits(totalSupply, 18)) : 0;
   const lpPoolBalance = usdcBalance ? Number(formatUnits(usdcBalance, 6)) : 0; // USDC has 6 decimals
 
-  // Calculate approximate mints based on LP pool balance divided by LP contribution per question
-  // Each successful answer contributes $1.00 to LP pool (server keeps $0.25 for fees)
-  const estimatedMintsFromPool = lpPoolBalance / LP_CONTRIBUTION_PER_QUESTION;
-  const numberOfMints = mintCount; // Count from TokensMinted events
-  const progressPercent = Math.min((estimatedMintsFromPool / TARGET_MINTS) * 100, 100);
+  // Calculate actual mints from total circulation divided by tokens per mint
+  // Each successful answer mints 5000 POIC tokens
+  const actualMints = Math.floor(totalMinted / TOKENS_PER_MINT);
+  const progressPercent = Math.min((actualMints / TARGET_MINTS) * 100, 100);
 
   // Format numbers for display
   const formatNumber = (num: number) => {
@@ -175,9 +174,9 @@ export function TokenStats() {
             {/* Progress Bar - Successful Mints */}
             <div className="space-y-2">
               <div className="flex justify-between text-sm">
-                <span className="font-medium">Estimated Mints</span>
+                <span className="font-medium">Successful Mints</span>
                 <span className="text-muted-foreground">
-                  {isLoadingUsdc ? '...' : `${Math.floor(estimatedMintsFromPool).toLocaleString()} / ${TARGET_MINTS.toLocaleString()}`}
+                  {isLoadingSupply ? '...' : `${actualMints.toLocaleString()} / ${TARGET_MINTS.toLocaleString()}`}
                 </span>
               </div>
               <div className="h-4 bg-muted rounded-full overflow-hidden">
@@ -187,7 +186,7 @@ export function TokenStats() {
                 />
               </div>
               <p className="text-xs text-muted-foreground">
-                {isLoadingUsdc ? 'Loading LP pool data...' : `${progressPercent.toFixed(2)}% to LP launch • Based on LP pool ($${lpPoolBalance.toFixed(2)}) / $${LP_CONTRIBUTION_PER_QUESTION} per mint`}
+                {isLoadingSupply ? 'Loading mint data...' : `${progressPercent.toFixed(3)}% to LP launch • ${(TARGET_MINTS - actualMints).toLocaleString()} mints remaining`}
               </p>
             </div>
 

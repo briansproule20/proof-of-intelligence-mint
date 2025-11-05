@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useAccount, useWalletClient, useConfig } from 'wagmi';
 import { getWalletClient } from '@wagmi/core';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { WalletConnect } from '@/components/WalletConnect';
 import { TokenBalance } from '@/components/TokenBalance';
 import { Button } from '@/components/ui/button';
@@ -15,21 +16,27 @@ import { Loader2, CheckCircle2, XCircle, Sparkles, ArrowLeft, ExternalLink } fro
 import { wrapFetchWithPayment, Signer } from 'x402-fetch';
 import { createPaymentHeader, selectPaymentRequirements } from 'x402/client';
 import { PaymentRequirementsSchema } from 'x402/types';
+import { motion } from 'framer-motion';
+import confetti from 'canvas-confetti';
 
 export default function PlayPage() {
   const { address, isConnected, connector } = useAccount();
   const { data: walletClient } = useWalletClient();
   const config = useConfig();
+  const router = useRouter();
   const [question, setQuestion] = useState<EchoQuestion | null>(null);
   const [questionId, setQuestionId] = useState<string>('');
   const [selectedAnswer, setSelectedAnswer] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isMinting, setIsMinting] = useState(false);
   const [error, setError] = useState<string>('');
-  const [successData, setSuccessData] = useState<{ message: string; txHash?: string } | null>(null);
+  const [answerCorrect, setAnswerCorrect] = useState<boolean | null>(null);
+  const [successData, setSuccessData] = useState<{ message: string; txHash?: string; usdcTxHash?: string } | null>(null);
   const [correctAnswer, setCorrectAnswer] = useState<string>('');
 
   const loadNextQuestion = () => {
     setSuccessData(null);
+    setAnswerCorrect(null);
     setError('');
     setSelectedAnswer('');
     setQuestion(null); // Clear current question to show loader
@@ -324,33 +331,25 @@ export default function PlayPage() {
   const handleSubmitAnswer = async () => {
     if (!selectedAnswer || !questionId || !question) return;
 
-    // Wallet only needed for minting, not for answering
-    if (!address) {
-      setError('Connect wallet to submit answer and mint tokens');
-      return;
-    }
-
     try {
       setIsLoading(true);
       setError('');
 
-      const response = await fetch(`/api/answer/${questionId}`, {
+      // Just verify the answer (don't mint yet)
+      const response = await fetch(`/api/answer/${questionId}/verify`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           answer: selectedAnswer,
-          walletAddress: address,
         }),
       });
 
-      const data: AnswerResponse = await response.json();
+      const data = await response.json();
 
       if (data.correct) {
-        setSuccessData({
-          message: data.message || 'Tokens minted to your wallet!',
-          txHash: data.txHash,
-        });
+        setAnswerCorrect(true);
       } else {
+        setAnswerCorrect(false);
         setError(data.message || 'Incorrect answer. Try again!');
       }
     } catch (err) {
@@ -358,6 +357,49 @@ export default function PlayPage() {
       console.error(err);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleMint = async () => {
+    if (!address || !questionId) return;
+
+    try {
+      setIsMinting(true);
+      setError('');
+
+      const response = await fetch(`/api/answer/${questionId}/mint`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          walletAddress: address,
+        }),
+      });
+
+      const data: AnswerResponse = await response.json();
+
+      if (response.ok) {
+        // Subtle confetti celebration
+        confetti({
+          particleCount: 50,
+          spread: 60,
+          origin: { y: 0.7 },
+          colors: ['#FFD700', '#FFA500'],
+          scalar: 0.8,
+        });
+
+        setSuccessData({
+          message: data.message || 'Tokens minted to your wallet!',
+          txHash: data.txHash,
+          usdcTxHash: data.usdcTxHash,
+        });
+      } else {
+        setError(data.message || 'Failed to mint tokens');
+      }
+    } catch (err) {
+      setError('Failed to mint tokens');
+      console.error(err);
+    } finally {
+      setIsMinting(false);
     }
   };
 
@@ -410,56 +452,94 @@ export default function PlayPage() {
         </div>
 
         {successData ? (
-          /* Success State */
-          <Card className="border-2 border-green-500/50 bg-gradient-to-br from-green-50 to-green-100/50 dark:from-green-950/20 dark:to-green-900/10">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-green-700 dark:text-green-400">
-                <CheckCircle2 className="h-6 w-6" />
-                Correct Answer!
-              </CardTitle>
-              <CardDescription className="text-green-600 dark:text-green-500">
-                {successData.message}
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="p-4 rounded-lg bg-background/50 border">
-                <div className="text-sm text-muted-foreground mb-1">Token Amount</div>
-                <div className="text-2xl font-bold">5000 POIC</div>
-              </div>
-              {successData.txHash && (
-                <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50 text-sm">
-                  <span className="text-muted-foreground">Transaction</span>
-                  <a
-                    href={`https://basescan.org/tx/${successData.txHash}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-1 text-primary hover:underline"
+          /* Success State - Minimalistic */
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ type: "spring", stiffness: 200, damping: 20 }}
+          >
+            <Card className="border-2 border-green-500/50">
+              <CardContent className="py-12">
+                <div className="text-center space-y-6">
+                  <motion.div
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    transition={{ type: "spring", stiffness: 300, damping: 20, delay: 0.1 }}
+                    className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-green-500/10"
                   >
-                    View on Basescan
-                    <ExternalLink className="h-3 w-3" />
-                  </a>
+                    <CheckCircle2 className="h-8 w-8 text-green-600 dark:text-green-400" />
+                  </motion.div>
+
+                  <div className="space-y-2">
+                    <h3 className="text-2xl font-bold">Tokens Minted!</h3>
+                    <p className="text-muted-foreground">{successData.message}</p>
+                  </div>
+
+                  <motion.div
+                    initial={{ scale: 0.9, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    transition={{ delay: 0.2 }}
+                    className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-green-500/10 border border-green-500/20"
+                  >
+                    <Sparkles className="h-5 w-5 text-green-600" />
+                    <span className="text-xl font-bold">5,000 POIC</span>
+                  </motion.div>
+
+                  {successData.txHash && (
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ delay: 0.3 }}
+                    >
+                      <a
+                        href={`https://basescan.org/tx/${successData.txHash}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 text-sm text-primary hover:underline"
+                      >
+                        View on Basescan
+                        <ExternalLink className="h-3 w-3" />
+                      </a>
+                    </motion.div>
+                  )}
+
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.4 }}
+                    className="flex flex-col sm:flex-row gap-3 pt-4"
+                  >
+                    <Button
+                      onClick={loadNextQuestion}
+                      size="lg"
+                      className="flex-1"
+                    >
+                      Next Question
+                    </Button>
+                    {address && (
+                      <Button
+                        onClick={() => {
+                          // Reset game state and navigate to wallet section
+                          setSuccessData(null);
+                          setAnswerCorrect(null);
+                          setError('');
+                          setSelectedAnswer('');
+                          setQuestion(null);
+                          setQuestionId('');
+                          router.push('/#wallet');
+                        }}
+                        variant="outline"
+                        size="lg"
+                        className="flex-1"
+                      >
+                        View Wallet
+                      </Button>
+                    )}
+                  </motion.div>
                 </div>
-              )}
-            </CardContent>
-            <CardFooter className="flex gap-3">
-              <Button
-                onClick={loadNextQuestion}
-                variant="default"
-                className="flex-1"
-              >
-                Load Next Question
-              </Button>
-              {address && (
-                <Button
-                  onClick={() => window.open(`https://basescan.org/address/${address}`, '_blank')}
-                  variant="outline"
-                  className="flex-1"
-                >
-                  View Wallet
-                </Button>
-              )}
-            </CardFooter>
-          </Card>
+              </CardContent>
+            </Card>
+          </motion.div>
         ) : !isConnected ? (
           /* Wallet Not Connected State */
           <Card className="border-2 border-primary/20 bg-gradient-to-br from-primary/5 to-primary/10">
@@ -553,7 +633,50 @@ export default function PlayPage() {
                   )}
                 </CardContent>
                 <CardFooter className="flex-col gap-2">
-                  {!error && (
+                  {answerCorrect && !successData ? (
+                    /* Correct Answer - Show Mint Button */
+                    <div className="w-full space-y-4">
+                      <div className="flex items-center gap-2 p-4 rounded-lg bg-green-50 dark:bg-green-950/20 border-2 border-green-500/50">
+                        <CheckCircle2 className="h-6 w-6 text-green-600 dark:text-green-400 flex-shrink-0" />
+                        <div>
+                          <p className="font-semibold text-green-700 dark:text-green-400">
+                            Correct Answer!
+                          </p>
+                          <p className="text-sm text-green-600 dark:text-green-500">
+                            Click below to mint your 5000 POIC tokens
+                          </p>
+                        </div>
+                      </div>
+                      <motion.div
+                        initial={{ scale: 0.9, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        transition={{
+                          type: "spring",
+                          stiffness: 260,
+                          damping: 20
+                        }}
+                      >
+                        <Button
+                          onClick={handleMint}
+                          disabled={isMinting}
+                          size="lg"
+                          className="w-full relative overflow-hidden"
+                        >
+                          {isMinting ? (
+                            <>
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                              Minting Tokens...
+                            </>
+                          ) : (
+                            <>
+                              <Sparkles className="mr-2 h-4 w-4" />
+                              Mint Tokens
+                            </>
+                          )}
+                        </Button>
+                      </motion.div>
+                    </div>
+                  ) : !error && !answerCorrect ? (
                     <>
                       <Button
                         onClick={handleSubmitAnswer}
@@ -578,7 +701,7 @@ export default function PlayPage() {
                         </p>
                       )}
                     </>
-                  )}
+                  ) : null}
                 </CardFooter>
               </>
             ) : (

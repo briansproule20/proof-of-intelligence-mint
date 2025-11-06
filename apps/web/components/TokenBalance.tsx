@@ -53,14 +53,16 @@ export function TokenBalance({ onMintSuccess }: { onMintSuccess?: boolean }) {
   useEffect(() => {
     if (onMintSuccess) {
       setShowPulse(true);
-      // Refetch balance after a short delay to get updated value
+      // IMMEDIATELY increment by 5000 for instant dopamine hit
+      setDisplayBalance(prev => prev + 5000);
+      // Refetch real balance after animation completes
       setTimeout(() => {
         refetch();
-      }, 500);
+      }, 2000);
       // Reset pulse after animation
       setTimeout(() => {
         setShowPulse(false);
-      }, 2000);
+      }, 2500);
     }
   }, [onMintSuccess, refetch]);
 

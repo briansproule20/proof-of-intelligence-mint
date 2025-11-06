@@ -50,6 +50,7 @@ export const x402RoutesConfig: RoutesConfig = {
     network: 'base',
     config: {
       description: routeDescriptions['GET /api/x402/question'],
+      outputSchema: zodToJsonSchema(questionResponseSchema) as any,
       discoverable: true,
     },
   },
@@ -58,6 +59,8 @@ export const x402RoutesConfig: RoutesConfig = {
     network: 'base',
     config: {
       description: routeDescriptions['POST /api/x402/answer'],
+      inputSchema: zodToJsonSchema(answerInputSchema) as any,
+      outputSchema: zodToJsonSchema(answerResponseSchema) as any,
       discoverable: true,
     },
   },

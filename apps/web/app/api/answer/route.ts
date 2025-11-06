@@ -108,7 +108,7 @@ export async function POST(request: NextRequest) {
     let mintTxHash: string;
 
     // Check if can mint (answered correctly but not yet minted)
-    const canMint = await canMintQuestion(questionId, walletAddress);
+    const canMint = await canMintQuestion(questionId);
     if (!canMint) {
       return NextResponse.json(
         {

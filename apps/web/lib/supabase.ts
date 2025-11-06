@@ -151,7 +151,7 @@ export async function markQuestionMinted(
 /**
  * Check if question can be minted (answered correctly but not yet minted)
  */
-export async function canMintQuestion(questionId: string, userId: string): Promise<boolean> {
+export async function canMintQuestion(questionId: string): Promise<boolean> {
   const question = await getQuestion(questionId);
 
   if (!question) {
@@ -159,7 +159,6 @@ export async function canMintQuestion(questionId: string, userId: string): Promi
   }
 
   return (
-    question.user_id === userId &&
     question.answered &&
     question.is_correct === true &&
     !question.minted

@@ -11,8 +11,7 @@ export const config = createConfig({
     }),
   ],
   transports: {
-    // Use Cloudflare's public RPC which supports CORS from localhost
-    // This is critical for x402-fetch to work properly from the browser
-    [base.id]: http('https://base.gateway.tenderly.co'),
+    // Use Base public RPC
+    [base.id]: http('https://mainnet.base.org'),
   },
 });

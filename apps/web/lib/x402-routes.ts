@@ -4,9 +4,9 @@ import { zodToJsonSchema } from './x402-schema';
 
 // Route descriptions for x402 payment metadata
 const routeDescriptions = {
-  '/api/x402/question':
+  'GET /api/x402/question':
     'Generate AI-powered trivia question using Claude Sonnet 4.5. Payment goes to LP pool.',
-  '/api/x402/answer':
+  'POST /api/x402/answer':
     'Submit answer to trivia question and mint POIC tokens if correct. Minimal payment for x402scan visibility.',
 } as const;
 
@@ -45,20 +45,20 @@ const answerResponseSchema = z.object({
 
 // Build x402 routes config
 export const x402RoutesConfig: RoutesConfig = {
-  '/api/x402/question': {
+  'GET /api/x402/question': {
     price: 1.25, // 1.25 USDC per question
     network: 'base',
     config: {
-      description: routeDescriptions['/api/x402/question'],
+      description: routeDescriptions['GET /api/x402/question'],
       outputSchema: zodToJsonSchema(questionResponseSchema),
       discoverable: true,
     },
   },
-  '/api/x402/answer': {
+  'POST /api/x402/answer': {
     price: 0.0001, // Minimum payment for x402scan visibility
     network: 'base',
     config: {
-      description: routeDescriptions['/api/x402/answer'],
+      description: routeDescriptions['POST /api/x402/answer'],
       inputSchema: zodToJsonSchema(answerInputSchema),
       outputSchema: zodToJsonSchema(answerResponseSchema),
       discoverable: true,

@@ -5,7 +5,12 @@ import { injected, walletConnect } from 'wagmi/connectors';
 export const config = createConfig({
   chains: [base],
   connectors: [
-    injected(),
+    injected({
+      target: 'metaMask',
+    }),
+    injected({
+      target: 'phantom',
+    }),
     walletConnect({
       projectId: process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID || '',
     }),

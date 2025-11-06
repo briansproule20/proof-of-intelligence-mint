@@ -1,14 +1,15 @@
-import { z, type ZodObject, type ZodRawShape, type ZodSchema } from "zod";
+import { type ZodObject, type ZodRawShape, type ZodSchema } from "zod";
 import type { HTTPRequestStructure } from "x402/types";
+import { zodToJsonSchema as convertZodToJsonSchema } from "zod-to-json-schema";
 
 export function inputSchemaToX402(inputSchema: ZodObject<ZodRawShape>): HTTPRequestStructure {
-  const jsonSchema = z.toJSONSchema(inputSchema);
+  const jsonSchema = convertZodToJsonSchema(inputSchema) as any;
 
   // Convert JSON Schema properties to Record<string, string> for x402
   // x402 expects simple string descriptions, not full JSON schema objects
   const queryParams: Record<string, string> = {};
 
-  if (jsonSchema.properties) {
+  if (jsonSchema.properties && typeof jsonSchema.properties === 'object') {
     for (const [key, value] of Object.entries(jsonSchema.properties)) {
       // Convert each property to a string description
       if (typeof value === 'object' && value !== null) {
@@ -29,5 +30,5 @@ export function inputSchemaToX402(inputSchema: ZodObject<ZodRawShape>): HTTPRequ
 }
 
 export function zodToJsonSchema(schema: ZodSchema) {
-  return z.toJSONSchema(schema);
+  return convertZodToJsonSchema(schema);
 }

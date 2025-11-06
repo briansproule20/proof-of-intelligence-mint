@@ -47,7 +47,8 @@
     "x402": "^0.7.0",
     "x402-fetch": "^0.7.0",
     "x402-next": "^0.7.0",
-    "zod": "^3.23.8"
+    "zod": "^3.23.8",
+    "zod-to-json-schema": "^3.24.6"
   },
   "devDependencies": {
     "@types/canvas-confetti": "^1.9.0",

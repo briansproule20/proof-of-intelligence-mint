@@ -65,7 +65,7 @@ export default function PlayPage() {
       if (!activeWalletClient && connector) {
         console.log('[PlayPage] WalletClient from hook is null, trying connector...');
         try {
-          const connectorClient = await getWalletClient(config, { connector });
+          const connectorClient = await getWalletClient(config, { connector, chainId: base.id });
           console.log('[PlayPage] Got client from connector:', !!connectorClient);
           activeWalletClient = connectorClient as any;
         } catch (err) {
@@ -78,6 +78,12 @@ export default function PlayPage() {
         setIsLoading(false);
         setError('Wallet not ready. Please disconnect and reconnect your wallet.');
         return;
+      }
+
+      // FORCE chain to Base if not set
+      if (!activeWalletClient.chain) {
+        console.log('[PlayPage] Wallet client missing chain, forcing Base');
+        activeWalletClient = { ...activeWalletClient, chain: base };
       }
 
       console.log('[PlayPage] Requesting question via x402 (payment to server wallet)...');

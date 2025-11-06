@@ -11,7 +11,7 @@ export const config = createConfig({
     }),
   ],
   transports: {
-    // Use Base public RPC
-    [base.id]: http('https://mainnet.base.org'),
+    // Use Cloudflare's Base RPC - better rate limits
+    [base.id]: http('https://base.llamarpc.com'),
   },
 });

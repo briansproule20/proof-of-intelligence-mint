@@ -41,14 +41,17 @@ export default function PlayPage() {
     fetchQuestion();
   };
 
-  // Fetch question only when wallet is connected AND walletClient is loaded
-  // walletClient dependency is critical for Coinbase Smart Wallet
+  // Fetch question when wallet connects
+  // Don't wait for walletClient - we'll get it inside fetchQuestion()
   useEffect(() => {
-    if (isConnected && address && walletClient) {
-      fetchQuestion();
+    if (isConnected && address) {
+      // Small delay to let wallet client initialize
+      setTimeout(() => {
+        fetchQuestion();
+      }, 100);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isConnected, address, walletClient]);
+  }, [isConnected, address]);
 
   const fetchQuestion = async () => {
     try {
@@ -60,13 +63,25 @@ export default function PlayPage() {
         throw new Error('Wallet not connected - no address');
       }
 
-      // CRITICAL: Must use walletClient from hook for Coinbase Smart Wallet compatibility
-      // Getting from connector breaks smart wallet signature verification
-      if (!walletClient) {
-        throw new Error('Wallet client not available. Please reconnect your wallet.');
+      // Try to get wallet client - prefer hook (for smart wallet), fallback to connector
+      let activeWalletClient = walletClient;
+
+      if (!activeWalletClient && connector) {
+        console.log('[PlayPage] WalletClient from hook is null, getting from connector as fallback...');
+        try {
+          const freshClient = await getWalletClient(config, { connector });
+          console.log('[PlayPage] Got wallet client from connector:', !!freshClient);
+          if (freshClient) {
+            activeWalletClient = freshClient as any;
+          }
+        } catch (err) {
+          console.error('[PlayPage] Failed to get wallet client from connector:', err);
+        }
       }
 
-      const activeWalletClient = walletClient;
+      if (!activeWalletClient) {
+        throw new Error('Wallet client not available. Try disconnecting and reconnecting your wallet.');
+      }
 
       console.log('[PlayPage] Requesting question via x402 (payment to server wallet)...');
       console.log('[PlayPage] Wallet client:', {

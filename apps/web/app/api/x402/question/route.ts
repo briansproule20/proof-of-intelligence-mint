@@ -29,21 +29,13 @@ export const revalidate = 0;
 
 export async function GET(request: NextRequest) {
   try {
-    // Get wallet address from query params (should be passed by client)
-    const walletAddress = request.nextUrl.searchParams.get('walletAddress');
     const difficulty = (request.nextUrl.searchParams.get('difficulty') || 'medium') as 'easy' | 'medium' | 'hard';
 
-    if (!walletAddress) {
-      return NextResponse.json(
-        {
-          error: 'Missing wallet address',
-          message: 'Wallet address is required in query params',
-        },
-        { status: 400 }
-      );
-    }
+    // TODO: Extract wallet address from x402 payment signature
+    // For now, use 'anonymous' and store payment tx hash only
+    const walletAddress = 'anonymous';
 
-    console.log(`[API x402/question] Generating question for wallet ${walletAddress}, difficulty: ${difficulty}`);
+    console.log(`[API x402/question] Generating question, difficulty: ${difficulty}`);
     console.log('[API x402/question] Using Echo API key mode for fast generation');
 
     // Use the new QuestionGenerator with Echo API key

@@ -5,13 +5,12 @@ import { storeQuestion } from '@/lib/supabase';
 import { forwardUsdcToContract } from '@/lib/server-wallet';
 
 /**
- * GET /api/question
+ * GET /api/x402/question
  *
  * Server-side question generation using Echo API key (fast!)
  *
  * PAYMENT FLOW:
- * - Called via /api/x402/question (requires 1.25 USDC payment to server wallet)
- * - x402 middleware validates payment before allowing request through
+ * - x402 middleware validates 1.25 USDC payment before allowing request through
  * - Server generates question using Echo API key (no blockchain transactions)
  * - Server IMMEDIATELY forwards 1.00 USDC to contract and stores tx hash
  * - Server keeps 0.25 USDC for gas + LLM costs
@@ -29,32 +28,12 @@ export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
 export async function GET(request: NextRequest) {
-  // SECURITY: Block direct access - must use /api/x402/question with payment
-  // Check if request is coming from x402 proxy by looking at the referer
-  const referer = request.headers.get('referer');
-  const url = request.url;
-
-  // Allow if called from x402 proxy (referer contains /api/x402/)
-  const isFromX402Proxy = referer && referer.includes('/api/x402/');
-
-  // Block if direct browser access (has referer but not from x402 proxy)
-  if (referer && !isFromX402Proxy) {
-    console.log('[API Question] ❌ Blocked direct access attempt from:', referer);
-    return NextResponse.json(
-      {
-        error: 'Direct access not allowed',
-        message: 'Questions must be requested via /api/x402/question with payment'
-      },
-      { status: 403 }
-    );
-  }
-
   try {
     const userId = request.nextUrl.searchParams.get('userId') || 'anonymous';
     const difficulty = (request.nextUrl.searchParams.get('difficulty') || 'medium') as 'easy' | 'medium' | 'hard';
 
-    console.log(`[API Question] Generating question for user ${userId}, difficulty: ${difficulty}`);
-    console.log('[API Question] Using Echo API key mode for fast generation');
+    console.log(`[API x402/question] Generating question for user ${userId}, difficulty: ${difficulty}`);
+    console.log('[API x402/question] Using Echo API key mode for fast generation');
 
     // Use the new QuestionGenerator with Echo API key
     const generator = getQuestionGenerator();
@@ -65,13 +44,13 @@ export async function GET(request: NextRequest) {
 
     // STEP 1: Forward 1.00 USDC to contract IMMEDIATELY
     // This happens right after question generation, before storing in DB
-    console.log('[API Question] Forwarding 1.00 USDC to contract...');
+    console.log('[API x402/question] Forwarding 1.00 USDC to contract...');
     let paymentTxHash: string;
     try {
       paymentTxHash = await forwardUsdcToContract();
-      console.log('[API Question] ✅ Forwarded 1.00 USDC to contract, tx:', paymentTxHash);
+      console.log('[API x402/question] ✅ Forwarded 1.00 USDC to contract, tx:', paymentTxHash);
     } catch (error) {
-      console.error('[API Question] ❌ CRITICAL: Failed to forward USDC:', error);
+      console.error('[API x402/question] ❌ CRITICAL: Failed to forward USDC:', error);
       return NextResponse.json(
         {
           error: 'Payment forwarding failed',
@@ -94,7 +73,7 @@ export async function GET(request: NextRequest) {
       paymentTxHash: paymentTxHash, // Store the USDC transfer tx hash
     });
 
-    console.log('[API Question] ✅ Question stored with payment tx hash:', questionId);
+    console.log('[API x402/question] ✅ Question stored with payment tx hash:', questionId);
 
     // Return ONLY the question (NO correct answer or _meta)
     const response = {
@@ -113,8 +92,8 @@ export async function GET(request: NextRequest) {
       },
     });
   } catch (error) {
-    console.error('[API Question] Error generating question:', error);
-    console.error('[API Question] Error details:', {
+    console.error('[API x402/question] Error generating question:', error);
+    console.error('[API x402/question] Error details:', {
       name: error instanceof Error ? error.name : 'Unknown',
       message: error instanceof Error ? error.message : String(error),
       stack: error instanceof Error ? error.stack : undefined,

@@ -40,14 +40,10 @@ async function proxyRequest(
     // Get request body if POST
     const body = method === 'POST' ? await request.text() : undefined;
 
-    // Add internal proxy header for security
-    const headers = new Headers(request.headers);
-    headers.set('x-internal-proxy', 'x402-proxy');
-
     // Forward the request to the actual API endpoint
     const response = await fetch(url.toString(), {
       method,
-      headers,
+      headers: request.headers,
       body,
     });
 

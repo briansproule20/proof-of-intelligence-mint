@@ -1,14 +1,10 @@
 import { http, createConfig } from 'wagmi';
 import { base } from 'wagmi/chains';
-import { injected, walletConnect, coinbaseWallet } from 'wagmi/connectors';
+import { injected, walletConnect } from 'wagmi/connectors';
 
 export const config = createConfig({
   chains: [base],
   connectors: [
-    coinbaseWallet({
-      appName: 'Proof of Intelligence Mint',
-      preference: 'eoaOnly', // FORCE EOA ONLY - Smart Wallet signatures fail x402 verification
-    }),
     injected(),
     walletConnect({
       projectId: process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID || '',

@@ -66,7 +66,8 @@ export default function PlayPage() {
       if (!activeWalletClient && connector) {
         console.log('[PlayPage] WalletClient from hook is null, trying connector...');
         try {
-          const connectorClient = await getWalletClient(config, { connector, chainId: base.id });
+          // Don't specify chainId - let it use whatever chain the wallet is on
+          const connectorClient = await getWalletClient(config, { connector });
           console.log('[PlayPage] Got client from connector:', !!connectorClient);
           activeWalletClient = connectorClient as any;
         } catch (err) {

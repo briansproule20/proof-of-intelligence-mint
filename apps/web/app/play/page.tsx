@@ -51,12 +51,24 @@ export default function PlayPage() {
 
   const fetchQuestion = async () => {
     try {
-      console.log('[PlayPage] fetchQuestion called, address:', address);
+      console.log('[PlayPage] fetchQuestion called, address:', address, 'walletClient:', !!walletClient);
       setIsLoading(true);
       setError('');
 
-      if (!address || !walletClient) {
-        throw new Error('Wallet not connected');
+      if (!address) {
+        throw new Error('Wallet not connected - no address');
+      }
+
+      if (!walletClient) {
+        console.log('[PlayPage] WalletClient not ready yet, retrying in 500ms...');
+        setIsLoading(false);
+        // Wait for walletClient to be ready
+        setTimeout(() => {
+          if (isConnected && address) {
+            fetchQuestion();
+          }
+        }, 500);
+        return;
       }
 
       console.log('[PlayPage] Requesting question via x402 (payment to server wallet)...');

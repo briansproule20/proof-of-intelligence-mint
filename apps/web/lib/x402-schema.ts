@@ -24,7 +24,7 @@ export function inputSchemaToX402(inputSchema: ZodObject<ZodRawShape>, method: "
 
   return {
     type: "http" as const,
-    method: method as const,
+    method,
     queryParams,
   };
 }

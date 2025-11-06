@@ -37,6 +37,9 @@ export default function HomePage() {
             <Link href="#launch" className="hidden md:block text-sm text-muted-foreground hover:text-foreground transition-colors">
               Launch
             </Link>
+            <Link href="#how-it-works" className="hidden md:block text-sm text-muted-foreground hover:text-foreground transition-colors">
+              Rules
+            </Link>
             <WalletConnect />
             <Button asChild={isConnected} size="sm" className="hidden md:flex" disabled={!isConnected}>
               {isConnected ? (

@@ -17,8 +17,9 @@ import { NextRequest, NextResponse } from 'next/server';
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
-export async function GET(
+async function proxyRequest(
   request: NextRequest,
+  method: 'GET' | 'POST',
   context: { params: Promise<{ path: string[] }> }
 ) {
   // Reconstruct the original API path without the x402 prefix
@@ -32,16 +33,21 @@ export async function GET(
   console.log('[x402 Proxy] Forwarding request:', {
     original: request.url,
     proxied: url.toString(),
+    method,
   });
 
   try {
+    // Get request body if POST
+    const body = method === 'POST' ? await request.text() : undefined;
+
     // Forward the request to the actual API endpoint
     const response = await fetch(url.toString(), {
-      method: 'GET',
+      method,
       headers: request.headers,
+      body,
     });
 
-    // Get the response body as text to avoid compression issues
+    // Get the response body as JSON
     const data = await response.json();
 
     // Return the response with explicit no-compression headers
@@ -59,4 +65,18 @@ export async function GET(
       { status: 500 }
     );
   }
+}
+
+export async function GET(
+  request: NextRequest,
+  context: { params: Promise<{ path: string[] }> }
+) {
+  return proxyRequest(request, 'GET', context);
+}
+
+export async function POST(
+  request: NextRequest,
+  context: { params: Promise<{ path: string[] }> }
+) {
+  return proxyRequest(request, 'POST', context);
 }

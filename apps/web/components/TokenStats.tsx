@@ -183,15 +183,20 @@ export function TokenStats() {
               <p className="text-muted-foreground">Progress to Uniswap V4 LP Launch</p>
             </div>
 
-            {/* Total Circulation */}
-            <div className="space-y-2">
-              <div className="flex justify-between text-sm">
-                <span className="font-medium">Total Circulation</span>
-                <span className="text-muted-foreground">
-                  {isLoadingSupply ? '...' : `${formatNumber(totalMinted)} POIC`}
+            {/* Supply Stats */}
+            <div className="space-y-1">
+              <div className="flex items-baseline justify-between">
+                <span className="text-sm font-medium text-muted-foreground">Circulating Supply</span>
+                <span className="text-2xl font-bold tabular-nums">
+                  {isLoadingMintCount ? '...' : formatNumber(actualMints * TOKENS_PER_MINT)}
                 </span>
               </div>
-              <p className="text-xs text-muted-foreground">Includes pre-minted supply</p>
+              <div className="flex items-baseline justify-between">
+                <span className="text-sm font-medium text-muted-foreground">Total Supply</span>
+                <span className="text-lg font-semibold text-muted-foreground tabular-nums">
+                  500.00M
+                </span>
+              </div>
             </div>
 
             {/* Progress Bar - Successful Mints */}
@@ -218,15 +223,13 @@ export function TokenStats() {
               <div className="space-y-1">
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <DollarSign className="h-4 w-4" />
-                  Current Price
+                  Market Price
                 </div>
                 <div className="text-2xl font-bold">
-                  {isLoadingUsdc || isLoadingContractPoic ? '...' : `$${dynamicPricePerToken.toFixed(6)}`}
+                  Pending
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  {lpPoolUsdcBalance > 0 && lpPoolPoicBalance > 0
-                    ? `${lpPoolUsdcBalance.toFixed(2)} USDC / ${formatNumber(lpPoolPoicBalance)} POIC`
-                    : 'Based on LP pool ratio'}
+                  $1.25 / 5000 POIC per mint
                 </p>
               </div>
               <div className="space-y-1">
@@ -238,7 +241,7 @@ export function TokenStats() {
                   {isLoadingUsdc ? '...' : `$${lpPoolUsdcBalance.toFixed(2)}`}
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  In contract for LP deployment
+                  Accumulating for LP launch
                 </p>
               </div>
             </div>

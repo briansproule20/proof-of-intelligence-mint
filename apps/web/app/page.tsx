@@ -32,16 +32,13 @@ export default function HomePage() {
               About
             </Link>
             <Link href="#wallet" className="hidden md:block text-sm text-muted-foreground hover:text-foreground transition-colors">
-              Wallet
+              Wallet & Stats
             </Link>
             <Link href="#features" className="hidden md:block text-sm text-muted-foreground hover:text-foreground transition-colors">
               Features
             </Link>
             <Link href="#how-it-works" className="hidden md:block text-sm text-muted-foreground hover:text-foreground transition-colors">
               How It Works
-            </Link>
-            <Link href="#stats" className="hidden md:block text-sm text-muted-foreground hover:text-foreground transition-colors">
-              POI Coin Stats
             </Link>
             <WalletConnect />
             <Button asChild={isConnected} size="sm" className="hidden md:flex" disabled={!isConnected}>
@@ -127,6 +124,9 @@ export default function HomePage() {
 
       {/* Department of Cognition Wallet Section */}
       <DepartmentOfCognitionWallet />
+
+      {/* Token Stats Section - Real-time blockchain data */}
+      <TokenStats />
 
       {/* Features Section */}
       <section id="features" className="container mx-auto px-4 py-12 md:py-20">
@@ -247,9 +247,6 @@ export default function HomePage() {
           </div>
         </div>
       </section>
-
-      {/* Token Stats Section - Real-time blockchain data */}
-      <TokenStats />
 
       {/* CTA Section */}
       <section className="container mx-auto px-4 py-12 md:py-20">

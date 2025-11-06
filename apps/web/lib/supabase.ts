@@ -19,6 +19,7 @@ export interface QuestionRecord {
   difficulty: 'easy' | 'medium' | 'hard';
   category: string | null;
   user_id: string; // Wallet address
+  payment_tx_hash: string; // USDC transfer tx hash (stored on question creation)
   answered: boolean;
   answered_at: string | null;
   user_answer: string | null;
@@ -30,7 +31,7 @@ export interface QuestionRecord {
 }
 
 /**
- * Store a generated question in Supabase
+ * Store a generated question in Supabase with payment tx hash
  */
 export async function storeQuestion(data: {
   questionText: string;
@@ -40,6 +41,7 @@ export async function storeQuestion(data: {
   difficulty: 'easy' | 'medium' | 'hard';
   category: string;
   userId: string;
+  paymentTxHash: string; // USDC transfer tx hash from forwarding
 }): Promise<string> {
   const { data: question, error } = await supabase
     .from('questions')
@@ -51,6 +53,7 @@ export async function storeQuestion(data: {
       difficulty: data.difficulty,
       category: data.category,
       user_id: data.userId,
+      payment_tx_hash: data.paymentTxHash,
     })
     .select('id')
     .single();

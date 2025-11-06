@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { AnswerResponse } from '@poim/shared';
-import { verifyAnswer, markQuestionMinted, canMintQuestion } from '@/lib/supabase';
-import { mintTokens, forwardUsdcToContract } from '@/lib/server-wallet';
-import { keccak256, toBytes } from 'viem';
+import { verifyAnswer, markQuestionMinted, canMintQuestion, getQuestion } from '@/lib/supabase';
+import { mintTokens } from '@/lib/server-wallet';
 
 /**
  * POST /api/answer
@@ -15,10 +14,12 @@ import { keccak256, toBytes } from 'viem';
  *   walletAddress: string
  * }
  *
- * SECURITY:
+ * SECURITY & PAYMENT FLOW:
  * - Question and correct answer stored in Supabase (not exposed to client)
  * - Answer verified server-side against Supabase record
- * - Can only mint once per question (idempotency via Supabase)
+ * - USDC was already forwarded to contract when question was created
+ * - Payment tx hash stored on question row (used for minting)
+ * - Can only mint once per question (idempotency via Supabase + blockchain)
  */
 
 // Force dynamic rendering - no caching
@@ -77,39 +78,49 @@ export async function POST(request: NextRequest) {
 
     console.log('[API Answer] Answer is correct! Proceeding to mint...');
 
-    // Check if already minted
+    // Get the question to retrieve the payment_tx_hash
+    const question = await getQuestion(questionId);
+    if (!question) {
+      return NextResponse.json(
+        {
+          correct: false,
+          message: 'Question not found',
+        } as AnswerResponse,
+        { status: 404 }
+      );
+    }
+
+    // Use the payment_tx_hash from the question row
+    // This was stored when the question was created and USDC was forwarded
+    const paymentTxHash = question.payment_tx_hash;
+    console.log('[API Answer] Using payment tx hash from question:', paymentTxHash);
+
+    let mintTxHash: string;
+
+    // Check if can mint (answered correctly but not yet minted)
     const canMint = await canMintQuestion(questionId, walletAddress);
     if (!canMint) {
       return NextResponse.json(
         {
           correct: true,
-          message: 'Question already minted or invalid',
+          message: 'Question already minted',
         } as AnswerResponse,
         { status: 400 }
       );
     }
 
-    // Generate unique bytes32 identifier from questionId + walletAddress
-    // This ensures idempotency for the blockchain mint
-    const paymentTxHash = keccak256(toBytes(`${questionId}-${walletAddress}`));
-
-    console.log('[API Answer] Minting tokens for question:', questionId);
-    console.log('[API Answer] Idempotency key (bytes32):', paymentTxHash);
-
-    // Mint tokens and forward USDC to LP pool
-    let mintTxHash: string;
-
+    // Mint tokens to user using the payment tx hash from question creation
     try {
-      // 1. Mint tokens to user (using payment tx hash for idempotency)
+      console.log('[API Answer] Minting tokens for question:', questionId);
       mintTxHash = await mintTokens(walletAddress, paymentTxHash);
       console.log('[API Answer] ✅ Minted tokens, tx:', mintTxHash);
 
       // Mark as minted in Supabase
       await markQuestionMinted(questionId, mintTxHash);
+      console.log('[API Answer] ✅ Marked as minted in database');
     } catch (error) {
       console.error('[API Answer] ❌ CRITICAL: Failed to mint tokens:', error);
 
-      // Minting failed - this is critical, inform user
       return NextResponse.json({
         correct: true,
         message: 'Answer correct, but minting failed. Please contact support.',
@@ -117,24 +128,11 @@ export async function POST(request: NextRequest) {
       } as AnswerResponse);
     }
 
-    // 2. Forward 1.00 USDC to POIC contract for LP pool (non-blocking)
-    // (Server keeps 0.25 USDC for gas fees + LLM costs)
-    // If this fails, we still return success to user and log silently
-    let usdcTxHash: string | undefined;
-    try {
-      usdcTxHash = await forwardUsdcToContract();
-      console.log('[API Answer] ✅ Forwarded 1.00 USDC to LP pool, tx:', usdcTxHash);
-    } catch (error) {
-      console.error('[API Answer] ⚠️  USDC forwarding failed (non-critical):', error);
-      console.error('[API Answer] Stack:', error instanceof Error ? error.stack : 'No stack trace');
-      // Don't fail the request - minting succeeded, USDC can be forwarded later
-    }
-
     return NextResponse.json({
       correct: true,
       message: 'Tokens minted successfully!',
       txHash: mintTxHash,
-      usdcTxHash,
+      usdcTxHash: paymentTxHash, // USDC was forwarded when question was created
     } as AnswerResponse);
   } catch (error) {
     console.error('[API Answer] Error:', error);

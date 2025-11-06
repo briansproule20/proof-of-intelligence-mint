@@ -8,6 +8,7 @@ CREATE TABLE questions (
   difficulty TEXT CHECK (difficulty IN ('easy', 'medium', 'hard')),
   category TEXT,
   user_id TEXT NOT NULL,
+  payment_tx_hash TEXT NOT NULL, -- USDC transfer tx hash (forwarded on question creation)
   answered BOOLEAN DEFAULT FALSE,
   answered_at TIMESTAMP,
   user_answer TEXT,

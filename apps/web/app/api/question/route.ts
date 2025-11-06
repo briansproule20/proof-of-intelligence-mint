@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getQuestionGenerator } from '@/lib/question-generator';
 import { hasUserSeenQuestion, markQuestionAsAsked } from '@/lib/question-tracker';
 import { storeQuestion } from '@/lib/supabase';
+import { forwardUsdcToContract } from '@/lib/server-wallet';
 
 /**
  * GET /api/question
@@ -12,13 +13,15 @@ import { storeQuestion } from '@/lib/supabase';
  * - Called via /api/x402/question (requires 1.25 USDC payment to server wallet)
  * - x402 middleware validates payment before allowing request through
  * - Server generates question using Echo API key (no blockchain transactions)
- * - Server wallet keeps the received USDC to forward to LP pool later
+ * - Server IMMEDIATELY forwards 1.00 USDC to contract and stores tx hash
+ * - Server keeps 0.25 USDC for gas + LLM costs
  *
  * Payment Flow:
  * 1. User pays 1.25 USDC to server wallet via x402 middleware
- * 2. Server receives payment and generates question (server uses API key)
- * 3. User answers correctly
- * 4. Server mints tokens and forwards the received USDC to LP pool
+ * 2. Server generates question using Echo API key
+ * 3. Server forwards 1.00 USDC to contract and stores tx hash on question row
+ * 4. User answers correctly
+ * 5. Server mints tokens using the payment tx hash from question row
  */
 
 // Force dynamic rendering - no caching
@@ -40,7 +43,26 @@ export async function GET(request: NextRequest) {
     // Mark this question as asked to this user
     markQuestionAsAsked(userId, generatedQuestion.question);
 
-    // Store question in Supabase (with correct answer)
+    // STEP 1: Forward 1.00 USDC to contract IMMEDIATELY
+    // This happens right after question generation, before storing in DB
+    console.log('[API Question] Forwarding 1.00 USDC to contract...');
+    let paymentTxHash: string;
+    try {
+      paymentTxHash = await forwardUsdcToContract();
+      console.log('[API Question] ✅ Forwarded 1.00 USDC to contract, tx:', paymentTxHash);
+    } catch (error) {
+      console.error('[API Question] ❌ CRITICAL: Failed to forward USDC:', error);
+      return NextResponse.json(
+        {
+          error: 'Payment forwarding failed',
+          message: 'Failed to forward payment to contract. Please contact support.',
+          details: error instanceof Error ? error.message : 'Unknown error',
+        },
+        { status: 500 }
+      );
+    }
+
+    // STEP 2: Store question in Supabase with payment tx hash
     const questionId = await storeQuestion({
       questionText: generatedQuestion.question,
       options: generatedQuestion.options,
@@ -49,9 +71,10 @@ export async function GET(request: NextRequest) {
       difficulty: difficulty,
       category: (generatedQuestion as any)._meta.category || 'General Knowledge',
       userId: userId,
+      paymentTxHash: paymentTxHash, // Store the USDC transfer tx hash
     });
 
-    console.log('[API Question] Successfully generated and stored question:', questionId);
+    console.log('[API Question] ✅ Question stored with payment tx hash:', questionId);
 
     // Return ONLY the question (NO correct answer or _meta)
     const response = {

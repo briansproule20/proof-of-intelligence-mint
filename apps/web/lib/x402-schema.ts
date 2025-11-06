@@ -1,24 +1,33 @@
-import type { HTTPRequestStructure } from 'x402/types';
-import { z } from 'zod';
+import { z, type ZodObject, type ZodRawShape, type ZodSchema } from "zod";
+import type { HTTPRequestStructure } from "x402/types";
 
-/**
- * Convert Zod schema to x402 HTTP request structure
- * Used for defining input schemas in x402 route configuration
- */
-export function inputSchemaToX402(
-  schema: z.ZodObject<any>
-): HTTPRequestStructure {
+export function inputSchemaToX402(inputSchema: ZodObject<ZodRawShape>): HTTPRequestStructure {
+  const jsonSchema = z.toJSONSchema(inputSchema);
+
+  // Convert JSON Schema properties to Record<string, string> for x402
+  // x402 expects simple string descriptions, not full JSON schema objects
+  const queryParams: Record<string, string> = {};
+
+  if (jsonSchema.properties) {
+    for (const [key, value] of Object.entries(jsonSchema.properties)) {
+      // Convert each property to a string description
+      if (typeof value === 'object' && value !== null) {
+        const prop = value as any;
+        // Create a simple string description from the schema
+        const type = prop.type || 'string';
+        const description = prop.description || '';
+        queryParams[key] = description || `${type} parameter`;
+      }
+    }
+  }
+
   return {
-    type: 'http',
-    method: 'GET',
-    queryParams: zodToJsonSchema(schema),
+    type: "http" as const,
+    method: "GET" as const,
+    queryParams,
   };
 }
 
-/**
- * Convert Zod schema to JSON Schema format
- * x402 uses JSON Schema for defining input/output structures
- */
-export function zodToJsonSchema(schema: z.ZodType<any>) {
-  return schema as any; // x402 handles Zod schema conversion internally
+export function zodToJsonSchema(schema: ZodSchema) {
+  return z.toJSONSchema(schema);
 }

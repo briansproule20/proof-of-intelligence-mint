@@ -55,7 +55,7 @@ export const x402RoutesConfig: RoutesConfig = {
     },
   },
   'POST /api/x402/answer': {
-    price: 0.0001, // Minimum payment for x402scan visibility
+    price: 0.001, // 10x increase for x402scan visibility (was 0.0001)
     network: 'base',
     config: {
       description: routeDescriptions['POST /api/x402/answer'],

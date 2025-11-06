@@ -104,7 +104,7 @@ export default function HomePage() {
 
           <div className="space-y-6 text-muted-foreground leading-relaxed text-base md:text-lg">
             <p>
-              Following the Great Cognitive Collapse (triggered when 92% of the population failed a basic reasoning exam), humanity was reorganized under the Department of Cognition, a proud, benevolent institution dedicated to regulating all thinking activities.
+              Following the Great Cognitive Collapse, humanity was reorganized under the Department of Cognition, a proud, benevolent institution dedicated to regulating all thinking activities.
             </p>
             <p>
               Every citizen now serves the Collective Mind by participating in the Proof of Intelligence Program, where your loyalty, intellect, and reflexes are measured through state-approved trivia.

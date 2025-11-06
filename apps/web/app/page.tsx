@@ -29,16 +29,16 @@ export default function HomePage() {
           </div>
           <nav className="flex items-center gap-6">
             <Link href="#about" className="hidden md:block text-sm text-muted-foreground hover:text-foreground transition-colors">
-              About
+              Lore
             </Link>
             <Link href="#wallet" className="hidden md:block text-sm text-muted-foreground hover:text-foreground transition-colors">
-              Wallet & Stats
+              Wallet
             </Link>
             <Link href="#features" className="hidden md:block text-sm text-muted-foreground hover:text-foreground transition-colors">
               Features
             </Link>
             <Link href="#how-it-works" className="hidden md:block text-sm text-muted-foreground hover:text-foreground transition-colors">
-              How It Works
+              Launch
             </Link>
             <WalletConnect />
             <Button asChild={isConnected} size="sm" className="hidden md:flex" disabled={!isConnected}>

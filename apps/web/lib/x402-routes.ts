@@ -1,6 +1,6 @@
 import type { RoutesConfig } from 'x402-next';
 import { z } from 'zod';
-import { zodToJsonSchema } from './x402-schema';
+import { zodToJsonSchema, inputSchemaToX402 } from './x402-schema';
 
 // Route descriptions for x402 payment metadata
 const routeDescriptions = {
@@ -59,7 +59,7 @@ export const x402RoutesConfig: RoutesConfig = {
     network: 'base',
     config: {
       description: routeDescriptions['POST /api/x402/answer'],
-      inputSchema: zodToJsonSchema(answerInputSchema) as any,
+      inputSchema: inputSchemaToX402(answerInputSchema, "POST") as any,
       outputSchema: zodToJsonSchema(answerResponseSchema) as any,
       discoverable: true,
     },

@@ -41,58 +41,50 @@ export default function PlayPage() {
     fetchQuestion();
   };
 
-  // Fetch question when wallet connects
-  // Don't wait for walletClient - we'll get it inside fetchQuestion()
+  // Fetch question only when wallet is connected
   useEffect(() => {
-    if (isConnected && address) {
-      // Small delay to let wallet client initialize
-      setTimeout(() => {
-        fetchQuestion();
-      }, 100);
+    if (isConnected && address && walletClient) {
+      fetchQuestion();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isConnected, address]);
+  }, [isConnected, address, walletClient]);
 
   const fetchQuestion = async () => {
     try {
-      console.log('[PlayPage] fetchQuestion called, address:', address, 'walletClient:', !!walletClient, 'connector:', !!connector);
+      console.log('[PlayPage] fetchQuestion called, address:', address);
       setIsLoading(true);
       setError('');
 
-      if (!address) {
-        throw new Error('Wallet not connected - no address');
-      }
-
-      // Try to get wallet client - prefer hook (for smart wallet), fallback to connector
-      let activeWalletClient = walletClient;
-
-      if (!activeWalletClient && connector) {
-        console.log('[PlayPage] WalletClient from hook is null, getting from connector as fallback...');
-        try {
-          const freshClient = await getWalletClient(config, { connector });
-          console.log('[PlayPage] Got wallet client from connector:', !!freshClient);
-          if (freshClient) {
-            activeWalletClient = freshClient as any;
-          }
-        } catch (err) {
-          console.error('[PlayPage] Failed to get wallet client from connector:', err);
-        }
-      }
-
-      if (!activeWalletClient) {
-        throw new Error('Wallet client not available. Try disconnecting and reconnecting your wallet.');
+      if (!address || !walletClient) {
+        throw new Error('Wallet not connected');
       }
 
       console.log('[PlayPage] Requesting question via x402 (payment to server wallet)...');
       console.log('[PlayPage] Wallet client:', {
-        hasWalletClient: !!activeWalletClient,
-        hasAccount: !!activeWalletClient?.account,
-        accountAddress: activeWalletClient?.account?.address,
-        hasChain: !!activeWalletClient?.chain,
-        chainId: activeWalletClient?.chain?.id,
-        hasSignTypedData: !!activeWalletClient?.signTypedData,
-        hasSignTransaction: !!activeWalletClient?.signTransaction,
+        hasWalletClient: !!walletClient,
+        hasAccount: !!walletClient?.account,
+        accountAddress: walletClient?.account?.address,
+        hasChain: !!walletClient?.chain,
+        chainId: walletClient?.chain?.id,
+        hasSignTypedData: !!walletClient?.signTypedData,
+        hasSignTransaction: !!walletClient?.signTransaction,
       });
+
+      // Try to get a fresh wallet client that's compatible with x402-fetch
+      let activeWalletClient = walletClient;
+      if (connector) {
+        try {
+          const freshClient = await getWalletClient(config, { connector });
+          console.log('[PlayPage] Got fresh wallet client:', {
+            hasAccount: !!freshClient?.account,
+            address: freshClient?.account?.address,
+            chainId: freshClient?.chain?.id,
+          });
+          activeWalletClient = freshClient as any;
+        } catch (err) {
+          console.log('[PlayPage] Could not get fresh client, using existing:', err);
+        }
+      }
 
       // Wrap fetch with x402 payment handling (pattern from shirt.sh)
       // Note: Coinbase wallet has viem compatibility issues, use "as unknown as Signer" cast

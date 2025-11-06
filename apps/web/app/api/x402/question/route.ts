@@ -29,21 +29,29 @@ export const revalidate = 0;
 
 export async function GET(request: NextRequest) {
   try {
-    // x402 middleware sets x-payer-address header with the wallet that paid
-    const payerAddress = request.headers.get('x-payer-address');
-    const userId = payerAddress || request.nextUrl.searchParams.get('userId') || 'anonymous';
+    // Get wallet address from query params (should be passed by client)
+    const walletAddress = request.nextUrl.searchParams.get('walletAddress');
     const difficulty = (request.nextUrl.searchParams.get('difficulty') || 'medium') as 'easy' | 'medium' | 'hard';
 
-    console.log(`[API x402/question] Generating question for user ${userId}, difficulty: ${difficulty}`);
-    console.log('[API x402/question] Payer address from x402:', payerAddress);
+    if (!walletAddress) {
+      return NextResponse.json(
+        {
+          error: 'Missing wallet address',
+          message: 'Wallet address is required in query params',
+        },
+        { status: 400 }
+      );
+    }
+
+    console.log(`[API x402/question] Generating question for wallet ${walletAddress}, difficulty: ${difficulty}`);
     console.log('[API x402/question] Using Echo API key mode for fast generation');
 
     // Use the new QuestionGenerator with Echo API key
     const generator = getQuestionGenerator();
-    const generatedQuestion = await generator.generateQuestion(userId, difficulty);
+    const generatedQuestion = await generator.generateQuestion(walletAddress, difficulty);
 
-    // Mark this question as asked to this user
-    markQuestionAsAsked(userId, generatedQuestion.question);
+    // Mark this question as asked to this wallet
+    markQuestionAsAsked(walletAddress, generatedQuestion.question);
 
     // STEP 1: Forward 1.00 USDC to contract IMMEDIATELY
     // This happens right after question generation, before storing in DB
@@ -72,7 +80,7 @@ export async function GET(request: NextRequest) {
       explanation: (generatedQuestion as any)._meta.explanation,
       difficulty: difficulty,
       category: (generatedQuestion as any)._meta.category || 'General Knowledge',
-      userId: userId,
+      userId: walletAddress, // Store the wallet address that paid for this question
       paymentTxHash: paymentTxHash, // Store the USDC transfer tx hash
     });
 

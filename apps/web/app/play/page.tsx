@@ -133,7 +133,7 @@ export default function PlayPage() {
       // This will trigger the x402 middleware to collect 1.25 USDC payment to server wallet
       // Use absolute URL for x402-fetch
       const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000';
-      const url = `${baseUrl}/api/x402/question?userId=${address}&difficulty=medium`;
+      const url = `${baseUrl}/api/x402/question?walletAddress=${address}&difficulty=medium`;
 
       console.log('[PlayPage] Fetching from URL:', url);
 

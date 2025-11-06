@@ -29,6 +29,22 @@ export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
 export async function GET(request: NextRequest) {
+  // SECURITY: Block direct access - must use /api/x402/question with payment
+  // Check if request is coming from x402 proxy (same origin internal call)
+  const referer = request.headers.get('referer');
+  const isInternalCall = request.headers.get('x-forwarded-host') === null && !referer;
+
+  if (!isInternalCall) {
+    console.log('[API Question] ❌ Blocked direct access attempt');
+    return NextResponse.json(
+      {
+        error: 'Direct access not allowed',
+        message: 'Questions must be requested via /api/x402/question with payment'
+      },
+      { status: 403 }
+    );
+  }
+
   try {
     const userId = request.nextUrl.searchParams.get('userId') || 'anonymous';
     const difficulty = (request.nextUrl.searchParams.get('difficulty') || 'medium') as 'easy' | 'medium' | 'hard';

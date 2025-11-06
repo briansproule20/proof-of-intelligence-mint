@@ -131,56 +131,96 @@ contract POIC is ERC20, AccessControl {
     function _initializePoolAndDeployLiquidity() internal {
         if (lpDeployed) revert LpAlreadyDeployed();
 
+        // Use actual contract balances (not hardcoded amounts)
         uint256 usdcBalance = IERC20(PAYMENT_TOKEN).balanceOf(address(this));
-        if (usdcBalance < PAYMENT_SEED) revert InsufficientPaymentBalance();
+        uint256 poicBalance = balanceOf(address(this));
 
-        // Calculate sqrtPriceX96 for USDC:POIC ratio
-        // Price = USDC per POIC = 100k USDC / 500M POIC = 0.0002 USDC per POIC
-        // Adjusted for decimals: (100k * 10^6) / (500M * 10^18) = 0.0002 * 10^-12
+        // Require minimum liquidity
+        if (usdcBalance == 0 || poicBalance == 0) revert InsufficientPaymentBalance();
+
+        // Calculate sqrtPriceX96 dynamically based on actual amounts
+        // Price = USDC per POIC (accounting for decimals)
         // For sqrtPriceX96: sqrt(price) * 2^96
-        // This needs to account for token order (token0 < token1)
-
-        uint160 sqrtPriceX96 = _calculateSqrtPriceX96(PAYMENT_TOKEN, address(this));
+        // This accounts for token order (token0 < token1)
+        // Note: sqrtPriceX96 calculation prepared for when pool initialization is implemented
+        _calculateSqrtPriceX96(
+            PAYMENT_TOKEN,
+            address(this),
+            usdcBalance,
+            poicBalance
+        );
 
         // Initialize pool (assuming pool doesn't exist)
         // Note: This is simplified - production would need proper pool key and initialization
         // poolManager.initialize(poolKey, sqrtPriceX96, hookData);
 
-        // Approve tokens for position manager
-        IERC20(PAYMENT_TOKEN).forceApprove(address(positionManager), PAYMENT_SEED);
-        _approve(address(this), address(positionManager), POOL_SEED_AMOUNT);
+        // Approve tokens for position manager using actual balances
+        IERC20(PAYMENT_TOKEN).forceApprove(address(positionManager), usdcBalance);
+        _approve(address(this), address(positionManager), poicBalance);
 
         // Mint LP position (simplified - actual implementation needs proper params)
         // uint256 tokenId = positionManager.mint(...);
 
         lpDeployed = true;
 
-        emit LiquidityDeployed(PAYMENT_SEED, POOL_SEED_AMOUNT, 0);
+        emit LiquidityDeployed(usdcBalance, poicBalance, 0);
     }
 
     /**
-     * @notice Calculate sqrtPriceX96 for initial pool price
-     * @param token0 First token address
-     * @param token1 Second token address
+     * @notice Calculate sqrtPriceX96 for initial pool price based on actual amounts
+     * @param tokenA First token address (USDC)
+     * @param tokenB Second token address (POIC)
+     * @param amountA Amount of first token (USDC with 6 decimals)
+     * @param amountB Amount of second token (POIC with 18 decimals)
      * @return sqrtPriceX96 Square root price in Q96 format
      */
-    function _calculateSqrtPriceX96(address token0, address token1) internal pure returns (uint160) {
-        // Simplified calculation - actual implementation would be more complex
-        // Price ratio: 0.0002 USDC per POIC (accounting for decimals)
-        // If USDC is token0: sqrt(0.0002 * 10^-12) * 2^96
-        // If POIC is token0: sqrt(5000 * 10^12) * 2^96
+    function _calculateSqrtPriceX96(
+        address tokenA,
+        address tokenB,
+        uint256 amountA,
+        uint256 amountB
+    ) internal pure returns (uint160) {
+        // Determine token order (Uniswap requires token0 < token1)
+        bool aIsToken0 = tokenA < tokenB;
 
-        bool usdcIsToken0 = token0 < token1;
-
-        if (usdcIsToken0) {
-            // USDC per POIC = 0.0002 * 10^-12
-            // sqrtPrice = sqrt(2 * 10^-16) * 2^96 ≈ 1.12 * 10^12
-            return 1_120_000_000_000; // Approximate value
+        // Calculate price = token1 / token0 (accounting for decimals)
+        // USDC has 6 decimals, POIC has 18 decimals
+        if (aIsToken0) {
+            // tokenA (USDC) is token0, tokenB (POIC) is token1
+            // price = POIC per USDC = (amountB / 10^18) / (amountA / 10^6)
+            //       = (amountB * 10^6) / (amountA * 10^18)
+            //       = (amountB) / (amountA * 10^12)
+            // To avoid precision loss, we calculate: (amountB * 2^96) / (amountA * 10^12)
+            // Then take sqrt
+            uint256 ratio = (amountB * (2**96)) / (amountA * 1e12);
+            return uint160(_sqrt(ratio));
         } else {
-            // POIC per USDC = 5000 * 10^12
-            // sqrtPrice = sqrt(5000 * 10^12) * 2^96 ≈ 5.6 * 10^15
-            return 5_600_000_000_000_000; // Approximate value
+            // tokenB (POIC) is token0, tokenA (USDC) is token1
+            // price = USDC per POIC = (amountA / 10^6) / (amountB / 10^18)
+            //       = (amountA * 10^18) / (amountB * 10^6)
+            //       = (amountA * 10^12) / amountB
+            uint256 ratio = (amountA * 1e12 * (2**96)) / amountB;
+            return uint160(_sqrt(ratio));
         }
+    }
+
+    /**
+     * @notice Calculate square root using Babylonian method
+     * @param x Value to calculate square root of
+     * @return Square root of x
+     */
+    function _sqrt(uint256 x) internal pure returns (uint256) {
+        if (x == 0) return 0;
+
+        uint256 z = (x + 1) / 2;
+        uint256 y = x;
+
+        while (z < y) {
+            y = z;
+            z = (x / z + z) / 2;
+        }
+
+        return y;
     }
 
     /**

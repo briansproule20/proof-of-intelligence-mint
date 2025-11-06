@@ -130,26 +130,38 @@ export async function getServerUsdcBalance(): Promise<bigint> {
 }
 
 /**
- * Sweep all accumulated USDC to contract (minus reserve)
- * @param reserveAmount Amount to keep in server wallet for gas (default: 5 USDC)
+ * Sweep accumulated USDC from wrong answers to contract
+ *
+ * IMPORTANT: Does NOT sweep server fees (0.25 USDC per question)
+ * Only sweeps USDC from wrong answers that wasn't forwarded
+ *
+ * @param totalQuestionsAsked Total number of questions asked (to calculate fee reserve)
+ * @param gasReserve Additional USDC to keep for gas (default: 10 USDC)
  * @returns Transaction hash, or null if nothing to sweep
  */
 export async function sweepUsdcToContract(
-  reserveAmount: bigint = BigInt(5_000_000) // 5 USDC reserve
+  totalQuestionsAsked: number,
+  gasReserve: bigint = BigInt(10_000_000) // 10 USDC for gas
 ): Promise<string | null> {
   try {
     const balance = await getServerUsdcBalance();
 
+    // Calculate server fee reserve (0.25 USDC per question)
+    const serverFeeReserve = BigInt(totalQuestionsAsked) * BigInt(250_000); // 0.25 USDC = 250,000 units
+    const totalReserve = serverFeeReserve + gasReserve;
+
     // Calculate amount to sweep (balance - reserve)
-    const amountToSweep = balance > reserveAmount
-      ? balance - reserveAmount
+    const amountToSweep = balance > totalReserve
+      ? balance - totalReserve
       : BigInt(0);
 
     // Only sweep if we have meaningful amount (> 1 USDC)
     if (amountToSweep < BigInt(1_000_000)) {
       console.log('[Server Wallet] Insufficient balance to sweep:', {
         balance: balance.toString(),
-        reserve: reserveAmount.toString(),
+        serverFeeReserve: serverFeeReserve.toString(),
+        gasReserve: gasReserve.toString(),
+        totalReserve: totalReserve.toString(),
         wouldSweep: amountToSweep.toString(),
       });
       return null;
@@ -157,7 +169,9 @@ export async function sweepUsdcToContract(
 
     console.log('[Server Wallet] Sweeping accumulated USDC:', {
       totalBalance: balance.toString(),
-      reserve: reserveAmount.toString(),
+      serverFeeReserve: serverFeeReserve.toString(),
+      gasReserve: gasReserve.toString(),
+      totalReserve: totalReserve.toString(),
       sweeping: amountToSweep.toString(),
     });
 

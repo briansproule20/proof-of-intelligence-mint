@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerUsdcBalance, sweepUsdcToContract } from '@/lib/server-wallet';
+import { supabase } from '@/lib/supabase';
 
 /**
  * POST /api/admin/sweep
@@ -51,18 +52,36 @@ export async function POST(request: NextRequest) {
 
     console.log('[Admin Sweep] Authorized request received');
 
+    // Get total questions asked from Supabase
+    const { count, error: countError } = await supabase
+      .from('questions')
+      .select('*', { count: 'exact', head: true });
+
+    if (countError) {
+      console.error('[Admin Sweep] Failed to get questions count:', countError);
+      return NextResponse.json(
+        { error: 'Failed to get questions count', message: countError.message },
+        { status: 500 }
+      );
+    }
+
+    const totalQuestionsAsked = count || 0;
+    console.log('[Admin Sweep] Total questions asked:', totalQuestionsAsked);
+
     // Get current balance
     const balanceBefore = await getServerUsdcBalance();
     console.log('[Admin Sweep] Balance before sweep:', balanceBefore.toString());
 
-    // Sweep USDC (keeps 5 USDC reserve)
-    const txHash = await sweepUsdcToContract();
+    // Sweep USDC (keeps server fees + gas reserve)
+    const txHash = await sweepUsdcToContract(totalQuestionsAsked);
 
     // Get new balance
     const balanceAfter = await getServerUsdcBalance();
     console.log('[Admin Sweep] Balance after sweep:', balanceAfter.toString());
 
     const amountSwept = balanceBefore - balanceAfter;
+    const serverFeeReserve = BigInt(totalQuestionsAsked) * BigInt(250_000);
+    const gasReserve = BigInt(10_000_000);
 
     if (!txHash) {
       return NextResponse.json({
@@ -71,6 +90,9 @@ export async function POST(request: NextRequest) {
         balanceBefore: balanceBefore.toString(),
         balanceAfter: balanceAfter.toString(),
         amountSwept: '0',
+        totalQuestionsAsked,
+        serverFeeReserve: serverFeeReserve.toString(),
+        gasReserve: gasReserve.toString(),
         txHash: null,
       });
     }
@@ -88,6 +110,9 @@ export async function POST(request: NextRequest) {
       balanceBefore: balanceBefore.toString(),
       balanceAfter: balanceAfter.toString(),
       amountSwept: amountSwept.toString(),
+      totalQuestionsAsked,
+      serverFeeReserve: serverFeeReserve.toString(),
+      gasReserve: gasReserve.toString(),
       txHash,
     });
   } catch (error) {
@@ -129,17 +154,45 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    // Get total questions asked from Supabase
+    const { count, error: countError } = await supabase
+      .from('questions')
+      .select('*', { count: 'exact', head: true });
+
+    if (countError) {
+      return NextResponse.json(
+        { error: 'Failed to get questions count', message: countError.message },
+        { status: 500 }
+      );
+    }
+
+    const totalQuestionsAsked = count || 0;
+
     // Get current balance
     const balance = await getServerUsdcBalance();
     const balanceUsdc = Number(balance) / 1_000_000;
 
+    // Calculate reserves
+    const serverFeeReserve = BigInt(totalQuestionsAsked) * BigInt(250_000);
+    const gasReserve = BigInt(10_000_000);
+    const totalReserve = serverFeeReserve + gasReserve;
+
+    const sweepableAmount = balance > totalReserve
+      ? balance - totalReserve
+      : BigInt(0);
+
     return NextResponse.json({
       balance: balance.toString(),
       balanceUsdc: balanceUsdc.toFixed(2),
-      sweepableAmount: (balance > BigInt(5_000_000)
-        ? (Number(balance - BigInt(5_000_000)) / 1_000_000).toFixed(2)
-        : '0.00'
-      ),
+      totalQuestionsAsked,
+      serverFeeReserve: serverFeeReserve.toString(),
+      serverFeeReserveUsdc: (Number(serverFeeReserve) / 1_000_000).toFixed(2),
+      gasReserve: gasReserve.toString(),
+      gasReserveUsdc: (Number(gasReserve) / 1_000_000).toFixed(2),
+      totalReserve: totalReserve.toString(),
+      totalReserveUsdc: (Number(totalReserve) / 1_000_000).toFixed(2),
+      sweepableAmount: sweepableAmount.toString(),
+      sweepableAmountUsdc: (Number(sweepableAmount) / 1_000_000).toFixed(2),
     });
   } catch (error) {
     console.error('[Admin Sweep] Error checking balance:', error);

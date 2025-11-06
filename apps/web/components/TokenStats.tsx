@@ -20,7 +20,6 @@ const TOKENS_PER_MINT = 5000;
 const TARGET_MINTS = 100000;
 const PRICE_PER_QUESTION = 1.25; // $1.25 USDC per question (user pays)
 const LP_CONTRIBUTION_PER_QUESTION = 1.00; // $1.00 USDC goes to LP pool per question
-const PRICE_PER_TOKEN = 0.0002; // $0.0002 per POIC (1.00 USDC / 5000 POIC)
 
 export function TokenStats() {
   const publicClient = usePublicClient({ chainId: CHAIN_ID });
@@ -43,13 +42,22 @@ export function TokenStats() {
     chainId: CHAIN_ID,
   });
 
-  // Fetch USDC balance of server wallet (LP pool)
+  // Fetch USDC balance of contract (LP pool)
   const { data: usdcBalance, isLoading: isLoadingUsdc } = useReadContract({
     address: USDC_ADDRESS,
     abi: USDC_ABI,
     functionName: 'balanceOf',
-    args: [SERVER_WALLET_ADDRESS],
+    args: [CONTRACT_ADDRESS],
     chainId: base.id, // Base mainnet for USDC
+  });
+
+  // Fetch POIC balance of contract (pre-minted LP seed)
+  const { data: contractPoicBalance, isLoading: isLoadingContractPoic } = useReadContract({
+    address: CONTRACT_ADDRESS,
+    abi: POIC_ABI,
+    functionName: 'balanceOf',
+    args: [CONTRACT_ADDRESS],
+    chainId: CHAIN_ID,
   });
 
   // Fetch TokensMinted events to count actual mints
@@ -128,7 +136,14 @@ export function TokenStats() {
 
   // Calculate stats
   const totalMinted = totalSupply ? Number(formatUnits(totalSupply, 18)) : 0;
-  const lpPoolBalance = usdcBalance ? Number(formatUnits(usdcBalance, 6)) : 0; // USDC has 6 decimals
+  const lpPoolUsdcBalance = usdcBalance ? Number(formatUnits(usdcBalance, 6)) : 0; // USDC has 6 decimals
+  const lpPoolPoicBalance = contractPoicBalance ? Number(formatUnits(contractPoicBalance, 18)) : 0; // POIC has 18 decimals
+
+  // Calculate dynamic price: USDC per POIC based on actual contract balances
+  // Price = (USDC balance) / (POIC balance)
+  const dynamicPricePerToken = (lpPoolPoicBalance > 0 && lpPoolUsdcBalance > 0)
+    ? lpPoolUsdcBalance / lpPoolPoicBalance
+    : 0.0002; // Fallback to expected price if no balances yet
 
   // Use direct mint count from contract (not calculated from totalSupply)
   // contractMintCount tracks actual user mints, totalSupply includes pre-minted LP seed
@@ -205,16 +220,26 @@ export function TokenStats() {
                   <DollarSign className="h-4 w-4" />
                   Current Price
                 </div>
-                <div className="text-2xl font-bold">${PRICE_PER_TOKEN}</div>
+                <div className="text-2xl font-bold">
+                  {isLoadingUsdc || isLoadingContractPoic ? '...' : `$${dynamicPricePerToken.toFixed(6)}`}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  {lpPoolUsdcBalance > 0 && lpPoolPoicBalance > 0
+                    ? `${lpPoolUsdcBalance.toFixed(2)} USDC / ${formatNumber(lpPoolPoicBalance)} POIC`
+                    : 'Based on LP pool ratio'}
+                </p>
               </div>
               <div className="space-y-1">
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <Droplets className="h-4 w-4" />
-                  LP Pool
+                  LP Pool (USDC)
                 </div>
                 <div className="text-2xl font-bold">
-                  {isLoadingUsdc ? '...' : `$${lpPoolBalance.toFixed(2)}`}
+                  {isLoadingUsdc ? '...' : `$${lpPoolUsdcBalance.toFixed(2)}`}
                 </div>
+                <p className="text-xs text-muted-foreground">
+                  In contract for LP deployment
+                </p>
               </div>
             </div>
           </div>

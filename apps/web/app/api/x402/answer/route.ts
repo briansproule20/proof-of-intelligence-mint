@@ -29,12 +29,32 @@ export async function POST(request: NextRequest) {
 
     // Build URL for /api/answer
     const url = new URL('/api/answer', request.url);
-    url.search = request.nextUrl.search; // Preserve query parameters
 
     // Get request body as text first
-    const body = await request.text();
+    const bodyText = await request.text();
 
-    console.log('[API x402/answer] Request body:', body);
+    // Try to parse as JSON to check if we have a body
+    let bodyData: any = null;
+    try {
+      if (bodyText) {
+        bodyData = JSON.parse(bodyText);
+      }
+    } catch (e) {
+      console.log('[API x402/answer] Body is not JSON');
+    }
+
+    // If no body data, check query params (x402 might send data as query params)
+    if (!bodyData || !bodyData.questionId) {
+      const questionId = request.nextUrl.searchParams.get('questionId');
+      const answer = request.nextUrl.searchParams.get('answer');
+
+      if (questionId && answer) {
+        console.log('[API x402/answer] Using query params:', { questionId, answer });
+        bodyData = { questionId, answer };
+      }
+    }
+
+    console.log('[API x402/answer] Final body data:', bodyData);
 
     // Forward to /api/answer with proper Content-Type header
     const response = await fetch(url.toString(), {
@@ -42,7 +62,7 @@ export async function POST(request: NextRequest) {
       headers: {
         'Content-Type': 'application/json',
       },
-      body,
+      body: JSON.stringify(bodyData),
     });
 
     // Get response data

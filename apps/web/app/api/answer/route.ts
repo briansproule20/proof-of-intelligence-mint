@@ -28,8 +28,25 @@ export const revalidate = 0;
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
-    const { questionId, answer } = body;
+    // Try to get data from body first, then fall back to query params
+    let questionId: string | null = null;
+    let answer: string | null = null;
+
+    try {
+      const body = await request.json();
+      questionId = body.questionId;
+      answer = body.answer;
+    } catch (e) {
+      // Body parsing failed, check query params
+      console.log('[API Answer] No JSON body, checking query params');
+    }
+
+    // Fallback to query params if not in body
+    if (!questionId || !answer) {
+      questionId = request.nextUrl.searchParams.get('questionId');
+      answer = request.nextUrl.searchParams.get('answer');
+      console.log('[API Answer] Using query params:', { questionId, answer });
+    }
 
     if (!questionId || !answer) {
       return NextResponse.json(

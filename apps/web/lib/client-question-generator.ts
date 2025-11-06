@@ -80,7 +80,7 @@ Return only the question data in this format:
     const { text } = await generateText({
       model: openai('claude-sonnet-4-5-20250929'),
       prompt,
-      temperature: 0.8,
+      temperature: 1.0,
       maxOutputTokens: 500,
     });
 

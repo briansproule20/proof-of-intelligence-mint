@@ -133,7 +133,7 @@ Return only the question data in this format:
       const { text } = await generateText({
         model: this.anthropic('claude-sonnet-4-20250514'),
         prompt,
-        temperature: 0.8, // Add some creativity
+        temperature: 1.0, // Add some creativity
       });
 
       const duration = Date.now() - startTime;

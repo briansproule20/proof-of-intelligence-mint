@@ -41,13 +41,14 @@ export default function PlayPage() {
     fetchQuestion();
   };
 
-  // Fetch question only when wallet is connected
+  // Fetch question only when wallet is connected AND walletClient is loaded
+  // walletClient dependency is critical for Coinbase Smart Wallet
   useEffect(() => {
-    if (isConnected && address) {
+    if (isConnected && address && walletClient) {
       fetchQuestion();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isConnected, address]);
+  }, [isConnected, address, walletClient]);
 
   const fetchQuestion = async () => {
     try {
@@ -59,22 +60,13 @@ export default function PlayPage() {
         throw new Error('Wallet not connected - no address');
       }
 
-      // Get wallet client - try multiple methods
-      let activeWalletClient = walletClient;
-
-      if (!activeWalletClient && connector) {
-        console.log('[PlayPage] WalletClient from hook is null, trying to get from connector...');
-        try {
-          activeWalletClient = await getWalletClient(config, { connector });
-          console.log('[PlayPage] Got wallet client from connector:', !!activeWalletClient);
-        } catch (err) {
-          console.error('[PlayPage] Failed to get wallet client from connector:', err);
-        }
-      }
-
-      if (!activeWalletClient) {
+      // CRITICAL: Must use walletClient from hook for Coinbase Smart Wallet compatibility
+      // Getting from connector breaks smart wallet signature verification
+      if (!walletClient) {
         throw new Error('Wallet client not available. Please reconnect your wallet.');
       }
+
+      const activeWalletClient = walletClient;
 
       console.log('[PlayPage] Requesting question via x402 (payment to server wallet)...');
       console.log('[PlayPage] Wallet client:', {

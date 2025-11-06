@@ -29,10 +29,13 @@ export const revalidate = 0;
 
 export async function GET(request: NextRequest) {
   try {
-    const userId = request.nextUrl.searchParams.get('userId') || 'anonymous';
+    // x402 middleware sets x-payer-address header with the wallet that paid
+    const payerAddress = request.headers.get('x-payer-address');
+    const userId = payerAddress || request.nextUrl.searchParams.get('userId') || 'anonymous';
     const difficulty = (request.nextUrl.searchParams.get('difficulty') || 'medium') as 'easy' | 'medium' | 'hard';
 
     console.log(`[API x402/question] Generating question for user ${userId}, difficulty: ${difficulty}`);
+    console.log('[API x402/question] Payer address from x402:', payerAddress);
     console.log('[API x402/question] Using Echo API key mode for fast generation');
 
     // Use the new QuestionGenerator with Echo API key

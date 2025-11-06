@@ -31,13 +31,17 @@ export async function POST(request: NextRequest) {
     const url = new URL('/api/answer', request.url);
     url.search = request.nextUrl.search; // Preserve query parameters
 
-    // Get request body
+    // Get request body as text first
     const body = await request.text();
 
-    // Forward to /api/answer
+    console.log('[API x402/answer] Request body:', body);
+
+    // Forward to /api/answer with proper Content-Type header
     const response = await fetch(url.toString(), {
       method: 'POST',
-      headers: request.headers,
+      headers: {
+        'Content-Type': 'application/json',
+      },
       body,
     });
 

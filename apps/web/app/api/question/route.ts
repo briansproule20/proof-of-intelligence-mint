@@ -30,12 +30,16 @@ export const revalidate = 0;
 
 export async function GET(request: NextRequest) {
   // SECURITY: Block direct access - must use /api/x402/question with payment
-  // Check if request is coming from x402 proxy (same origin internal call)
+  // Check if request is coming from x402 proxy by looking at the referer
   const referer = request.headers.get('referer');
-  const isInternalCall = request.headers.get('x-forwarded-host') === null && !referer;
+  const url = request.url;
 
-  if (!isInternalCall) {
-    console.log('[API Question] ❌ Blocked direct access attempt');
+  // Allow if called from x402 proxy (referer contains /api/x402/)
+  const isFromX402Proxy = referer && referer.includes('/api/x402/');
+
+  // Block if direct browser access (has referer but not from x402 proxy)
+  if (referer && !isFromX402Proxy) {
+    console.log('[API Question] ❌ Blocked direct access attempt from:', referer);
     return NextResponse.json(
       {
         error: 'Direct access not allowed',

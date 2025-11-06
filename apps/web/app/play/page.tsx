@@ -32,11 +32,13 @@ export default function PlayPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string>('');
   const [successData, setSuccessData] = useState<{ message: string; txHash?: string; usdcTxHash?: string } | null>(null);
+  const [mintSuccess, setMintSuccess] = useState(false);
 
   const loadNextQuestion = () => {
     setSuccessData(null);
     setError('');
     setSelectedAnswer('');
+    setMintSuccess(false);
     setQuestion(null); // Clear current question to show loader
     setQuestionId('');
     fetchQuestion();
@@ -339,6 +341,9 @@ export default function PlayPage() {
 
       if (data.correct) {
         // Correct answer! Tokens minted automatically
+        // Trigger balance animation
+        setMintSuccess(true);
+
         // Subtle confetti celebration
         confetti({
           particleCount: 50,
@@ -390,7 +395,7 @@ export default function PlayPage() {
       {/* Main Content */}
       <div className="container mx-auto px-4 py-8 max-w-4xl">
         <div className="grid md:grid-cols-2 gap-6 mb-8">
-          <TokenBalance />
+          <TokenBalance onMintSuccess={mintSuccess} />
 
           <Card>
             <CardHeader>

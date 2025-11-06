@@ -327,13 +327,13 @@ export default function PlayPage() {
       setError('');
 
       // New unified API: verify answer and mint tokens in one call
-      // SECURITY: Don't send wallet address - server looks it up from question.user_id
       const response = await fetch('/api/answer', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           questionId,
           answer: selectedAnswer,
+          walletAddress: address,
         }),
       });
 

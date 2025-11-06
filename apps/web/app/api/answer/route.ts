@@ -10,13 +10,13 @@ import { mintTokens } from '@/lib/server-wallet';
  *
  * Body: {
  *   questionId: string,
- *   answer: string
+ *   answer: string,
+ *   walletAddress: string
  * }
  *
- * SECURITY & PAYMENT FLOW:
+ * PAYMENT FLOW:
  * - Question and correct answer stored in Supabase (not exposed to client)
  * - Answer verified server-side against Supabase record
- * - Wallet address retrieved from question.user_id (prevents answer stealing)
  * - USDC was already forwarded to contract when question was created
  * - Payment tx hash stored on question row (used for minting)
  * - Can only mint once per question (idempotency via Supabase + blockchain)
@@ -31,51 +31,37 @@ export async function POST(request: NextRequest) {
     // Try to get data from body first, then fall back to query params
     let questionId: string | null = null;
     let answer: string | null = null;
+    let walletAddress: string | null = null;
 
     try {
       const body = await request.json();
       questionId = body.questionId;
       answer = body.answer;
+      walletAddress = body.walletAddress;
     } catch (e) {
       // Body parsing failed, check query params
       console.log('[API Answer] No JSON body, checking query params');
     }
 
     // Fallback to query params if not in body
-    if (!questionId || !answer) {
-      questionId = request.nextUrl.searchParams.get('questionId');
-      answer = request.nextUrl.searchParams.get('answer');
-      console.log('[API Answer] Using query params:', { questionId, answer });
+    if (!questionId || !answer || !walletAddress) {
+      questionId = questionId || request.nextUrl.searchParams.get('questionId');
+      answer = answer || request.nextUrl.searchParams.get('answer');
+      walletAddress = walletAddress || request.nextUrl.searchParams.get('walletAddress');
+      console.log('[API Answer] Using query params:', { questionId, answer, walletAddress });
     }
 
-    if (!questionId || !answer) {
+    if (!questionId || !answer || !walletAddress) {
       return NextResponse.json(
         {
           correct: false,
-          message: 'Question ID and answer are required',
+          message: 'Question ID, answer, and wallet address are required',
         } as AnswerResponse,
         { status: 400 }
       );
     }
 
     console.log('[API Answer] Verifying answer for question:', questionId);
-
-    // SECURITY: Get the question first to retrieve the wallet address
-    // This prevents users from stealing other people's questions by changing the wallet address
-    const question = await getQuestion(questionId);
-    if (!question) {
-      return NextResponse.json(
-        {
-          correct: false,
-          message: 'Question not found',
-        } as AnswerResponse,
-        { status: 404 }
-      );
-    }
-
-    // Use the wallet address from the question (who paid for it)
-    const walletAddress = question.user_id;
-    console.log('[API Answer] Minting to question owner:', walletAddress);
 
     // Verify answer against Supabase
     let verificationResult;
@@ -102,7 +88,19 @@ export async function POST(request: NextRequest) {
 
     console.log('[API Answer] Answer is correct! Proceeding to mint...');
 
-    // Use the payment_tx_hash from the question row (already fetched above)
+    // Get the question to retrieve the payment_tx_hash
+    const question = await getQuestion(questionId);
+    if (!question) {
+      return NextResponse.json(
+        {
+          correct: false,
+          message: 'Question not found',
+        } as AnswerResponse,
+        { status: 404 }
+      );
+    }
+
+    // Use the payment_tx_hash from the question row
     // This was stored when the question was created and USDC was forwarded
     const paymentTxHash = question.payment_tx_hash;
     console.log('[API Answer] Using payment tx hash from question:', paymentTxHash);

@@ -47,10 +47,11 @@ export async function POST(request: NextRequest) {
     if (!bodyData || !bodyData.questionId) {
       const questionId = request.nextUrl.searchParams.get('questionId');
       const answer = request.nextUrl.searchParams.get('answer');
+      const walletAddress = request.nextUrl.searchParams.get('walletAddress');
 
-      if (questionId && answer) {
-        console.log('[API x402/answer] Using query params:', { questionId, answer });
-        bodyData = { questionId, answer };
+      if (questionId && answer && walletAddress) {
+        console.log('[API x402/answer] Using query params:', { questionId, answer, walletAddress });
+        bodyData = { questionId, answer, walletAddress };
       }
     }
 

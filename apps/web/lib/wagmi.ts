@@ -7,7 +7,7 @@ export const config = createConfig({
   connectors: [
     coinbaseWallet({
       appName: 'Proof of Intelligence Mint',
-      preference: 'all', // Allow both EOA and Smart Wallet - x402 needs EOA for signing
+      preference: 'eoaOnly', // FORCE EOA ONLY - Smart Wallet signatures fail x402 verification
     }),
     injected(),
     walletConnect({

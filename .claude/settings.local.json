@@ -67,7 +67,10 @@
       "Bash(git add:*)",
       "Bash(git push:*)",
       "Bash(git commit:*)",
-      "Bash(git log:*)"
+      "Bash(git log:*)",
+      "Bash(cast code:*)",
+      "Bash(PRIVATE_KEY=$SERVER_WALLET_PRIVATE_KEY SERVER_WALLET_ADDRESS=0x32d831cd322EB5DF497A1A640175a874b5372BF8 forge script:*)",
+      "Bash(cast logs:*)"
     ],
     "deny": [],
     "ask": []

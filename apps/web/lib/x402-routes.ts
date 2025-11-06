@@ -45,7 +45,7 @@ const answerResponseSchema = z.object({
 
 // Build x402 routes config
 export const x402RoutesConfig: RoutesConfig = {
-  'GET /api/x402/question': {
+  '/api/x402/question': {
     price: 1.25, // 1.25 USDC per question
     network: 'base',
     config: {
@@ -54,7 +54,7 @@ export const x402RoutesConfig: RoutesConfig = {
       discoverable: true,
     },
   },
-  'POST /api/x402/answer': {
+  '/api/x402/answer': {
     price: 0.000001, // Minimal payment for x402scan visibility (~$0.000001)
     network: 'base',
     config: {

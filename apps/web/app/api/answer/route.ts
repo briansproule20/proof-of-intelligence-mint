@@ -10,13 +10,13 @@ import { mintTokens } from '@/lib/server-wallet';
  *
  * Body: {
  *   questionId: string,
- *   answer: string,
- *   walletAddress: string
+ *   answer: string
  * }
  *
  * SECURITY & PAYMENT FLOW:
  * - Question and correct answer stored in Supabase (not exposed to client)
  * - Answer verified server-side against Supabase record
+ * - Wallet address retrieved from question.user_id (prevents answer stealing)
  * - USDC was already forwarded to contract when question was created
  * - Payment tx hash stored on question row (used for minting)
  * - Can only mint once per question (idempotency via Supabase + blockchain)
@@ -29,7 +29,7 @@ export const revalidate = 0;
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { questionId, answer, walletAddress } = body;
+    const { questionId, answer } = body;
 
     if (!questionId || !answer) {
       return NextResponse.json(
@@ -41,17 +41,24 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (!walletAddress) {
+    console.log('[API Answer] Verifying answer for question:', questionId);
+
+    // SECURITY: Get the question first to retrieve the wallet address
+    // This prevents users from stealing other people's questions by changing the wallet address
+    const question = await getQuestion(questionId);
+    if (!question) {
       return NextResponse.json(
         {
           correct: false,
-          message: 'Wallet address is required',
+          message: 'Question not found',
         } as AnswerResponse,
-        { status: 400 }
+        { status: 404 }
       );
     }
 
-    console.log('[API Answer] Verifying answer for question:', questionId);
+    // Use the wallet address from the question (who paid for it)
+    const walletAddress = question.user_id;
+    console.log('[API Answer] Minting to question owner:', walletAddress);
 
     // Verify answer against Supabase
     let verificationResult;
@@ -78,19 +85,7 @@ export async function POST(request: NextRequest) {
 
     console.log('[API Answer] Answer is correct! Proceeding to mint...');
 
-    // Get the question to retrieve the payment_tx_hash
-    const question = await getQuestion(questionId);
-    if (!question) {
-      return NextResponse.json(
-        {
-          correct: false,
-          message: 'Question not found',
-        } as AnswerResponse,
-        { status: 404 }
-      );
-    }
-
-    // Use the payment_tx_hash from the question row
+    // Use the payment_tx_hash from the question row (already fetched above)
     // This was stored when the question was created and USDC was forwarded
     const paymentTxHash = question.payment_tx_hash;
     console.log('[API Answer] Using payment tx hash from question:', paymentTxHash);

@@ -28,10 +28,10 @@ const questionResponseSchema = z.object({
 });
 
 // Input schema for answer submission
+// SECURITY: walletAddress is looked up from question.user_id in the database
 const answerInputSchema = z.object({
   questionId: z.string(),
   answer: z.string(),
-  walletAddress: z.string(),
 });
 
 // Output schema - the answer response

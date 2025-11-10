@@ -8,6 +8,7 @@ import { Sparkles, Wallet, Brain, Coins, ArrowRight, CheckCircle2 } from 'lucide
 import { WalletConnect } from '@/components/WalletConnect';
 import { TokenStats } from '@/components/TokenStats';
 import DepartmentOfCognitionWallet from '@/components/DepartmentOfCognitionWallet';
+import IntelligenceMiner from '@/components/IntelligenceMiner';
 import { useAccount } from 'wagmi';
 
 export default function HomePage() {
@@ -33,6 +34,9 @@ export default function HomePage() {
             </Link>
             <Link href="#wallet" className="hidden md:block text-sm text-muted-foreground hover:text-foreground transition-colors">
               Wallet
+            </Link>
+            <Link href="#intelligence-miner" className="hidden md:block text-sm text-muted-foreground hover:text-foreground transition-colors">
+              Miner
             </Link>
             <Link href="#launch" className="hidden md:block text-sm text-muted-foreground hover:text-foreground transition-colors">
               Launch
@@ -65,11 +69,11 @@ export default function HomePage() {
           </h1>
 
           <h2 className="text-2xl md:text-3xl font-semibold text-muted-foreground">
-            Prove Your Intelligence, Mint Rewards
+            Monetize Your Brain on Base.
           </h2>
 
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-            Answer AI-powered trivia questions on Base. Pay 1.25 USDC per question via x402, mint 5000 POIC tokens for correct answers.
+            Congratulations, citizen! Your intelligence is now a tradeable asset.
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
@@ -85,6 +89,11 @@ export default function HomePage() {
                   <ArrowRight className="h-4 w-4" />
                 </span>
               )}
+            </Button>
+            <Button asChild size="lg" variant="outline">
+              <Link href="#intelligence-miner">
+                x402 Agent
+              </Link>
             </Button>
             <Button asChild size="lg" variant="outline">
               <Link href="#how-it-works">Learn More</Link>
@@ -124,6 +133,9 @@ export default function HomePage() {
 
       {/* Department of Cognition Wallet Section */}
       <DepartmentOfCognitionWallet />
+
+      {/* Intelligence Miner Section */}
+      <IntelligenceMiner />
 
       {/* Token Stats Section - Real-time blockchain data */}
       <TokenStats />
@@ -211,19 +223,27 @@ export default function HomePage() {
             </CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col items-center gap-4">
-            <Button asChild={isConnected} size="lg" className="gap-2" disabled={!isConnected}>
-              {isConnected ? (
-                <Link href="/play">
-                  <Sparkles className="h-4 w-4" />
-                  Play Game
+            <div className="flex flex-col sm:flex-row gap-4 w-full max-w-md">
+              <Button asChild={isConnected} size="lg" className="gap-2 flex-1" disabled={!isConnected}>
+                {isConnected ? (
+                  <Link href="/play">
+                    <Sparkles className="h-4 w-4" />
+                    Play Game
+                  </Link>
+                ) : (
+                  <span className="flex items-center gap-2">
+                    <Sparkles className="h-4 w-4" />
+                    Play Game
+                  </span>
+                )}
+              </Button>
+              <Button asChild size="lg" variant="outline" className="gap-2 flex-1">
+                <Link href="https://www.x402scan.com/composer/agent/aa412a04-b0f5-4309-ab85-65b6a3da7b09" target="_blank" rel="noopener noreferrer">
+                  <Brain className="h-4 w-4" />
+                  Deploy Agent
                 </Link>
-              ) : (
-                <span className="flex items-center gap-2">
-                  <Sparkles className="h-4 w-4" />
-                  Play Game
-                </span>
-              )}
-            </Button>
+              </Button>
+            </div>
             {!isConnected && (
               <p className="text-sm text-muted-foreground">
                 Connect your wallet to start playing

@@ -4,15 +4,76 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Sparkles, Wallet, Brain, Coins, ArrowRight, CheckCircle2 } from 'lucide-react';
+import { Sparkles, Wallet, Brain, Coins, ArrowRight, CheckCircle2, TrendingUp, Droplets } from 'lucide-react';
 import { WalletConnect } from '@/components/WalletConnect';
 import { TokenStats } from '@/components/TokenStats';
 import DepartmentOfCognitionWallet from '@/components/DepartmentOfCognitionWallet';
 import IntelligenceMiner from '@/components/IntelligenceMiner';
-import { useAccount } from 'wagmi';
+import { useAccount, useReadContract } from 'wagmi';
+import { CONTRACT_ADDRESS, POIC_ABI, USDC_ADDRESS, USDC_ABI, CHAIN_ID } from '@/lib/contract';
+import { formatUnits } from 'viem';
+import { base } from 'wagmi/chains';
+import { motion } from 'framer-motion';
+import { useEffect, useState } from 'react';
+
+const TARGET_MINTS = 100000;
 
 export default function HomePage() {
   const { isConnected } = useAccount();
+  const [displayBalance, setDisplayBalance] = useState(0);
+
+  // Fetch mint count from contract
+  const { data: contractMintCount } = useReadContract({
+    address: CONTRACT_ADDRESS,
+    abi: POIC_ABI,
+    functionName: 'mintCount',
+    chainId: CHAIN_ID,
+  });
+
+  // Fetch USDC balance of contract (LP pool)
+  const { data: usdcBalance } = useReadContract({
+    address: USDC_ADDRESS,
+    abi: USDC_ABI,
+    functionName: 'balanceOf',
+    args: [CONTRACT_ADDRESS],
+    chainId: base.id,
+  });
+
+  const actualMints = contractMintCount ? Number(contractMintCount) : 0;
+  const lpPoolUsdcBalance = usdcBalance ? Number(formatUnits(usdcBalance, 6)) : 0;
+  const progressPercent = Math.min((actualMints / TARGET_MINTS) * 100, 100);
+
+  // Animate counter
+  useEffect(() => {
+    const duration = 2000;
+    const steps = 60;
+    const stepValue = lpPoolUsdcBalance / steps;
+    let current = 0;
+
+    const timer = setInterval(() => {
+      current += stepValue;
+      if (current >= lpPoolUsdcBalance) {
+        setDisplayBalance(lpPoolUsdcBalance);
+        clearInterval(timer);
+      } else {
+        setDisplayBalance(current);
+      }
+    }, duration / steps);
+
+    return () => clearInterval(timer);
+  }, [lpPoolUsdcBalance]);
+
+  // Dynamic font size based on balance length
+  const getBalanceFontSize = () => {
+    const balanceString = displayBalance.toFixed(2);
+    const length = balanceString.length;
+
+    if (length <= 8) return 'text-5xl md:text-6xl';
+    if (length <= 10) return 'text-4xl md:text-5xl';
+    if (length <= 12) return 'text-3xl md:text-4xl';
+    return 'text-2xl md:text-3xl';
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-background via-background to-muted/20">
       {/* Header */}
@@ -99,6 +160,106 @@ export default function HomePage() {
               <Link href="#how-it-works">Learn More</Link>
             </Button>
           </div>
+
+          {/* Progress Indicators */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+            className="mt-16 max-w-4xl mx-auto"
+          >
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              {/* Mints Progress */}
+              <motion.div
+                whileHover={{ scale: 1.02 }}
+                transition={{ type: "spring", stiffness: 300 }}
+                className="relative h-full"
+              >
+                <Card className="border-primary/20 bg-gradient-to-br from-primary/5 via-background to-background h-full">
+                  <CardContent className="pt-6 h-full flex flex-col">
+                    <div className="space-y-4 flex-1 flex flex-col">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <Brain className="h-4 w-4 text-primary" />
+                          <span className="text-sm font-medium">Mints Complete</span>
+                        </div>
+                        <span className="text-2xl font-bold tabular-nums">
+                          {progressPercent.toFixed(1)}%
+                        </span>
+                      </div>
+                      <div className="flex-1 flex items-center">
+                        <div className="relative h-3 bg-muted rounded-full overflow-hidden w-full">
+                          <motion.div
+                            initial={{ width: 0 }}
+                            animate={{ width: `${progressPercent}%` }}
+                            transition={{ duration: 1.5, ease: "easeOut" }}
+                            className="absolute inset-y-0 left-0 bg-gradient-to-r from-primary via-primary to-primary/60"
+                          />
+                        </div>
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        {actualMints.toLocaleString()} / {TARGET_MINTS.toLocaleString()} mints
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+
+              {/* LP Pool Accumulation */}
+              <motion.div
+                whileHover={{ scale: 1.02 }}
+                transition={{ type: "spring", stiffness: 300 }}
+                className="relative h-full"
+              >
+                <Card className="border-primary/20 bg-gradient-to-br from-primary/5 via-background to-background overflow-hidden h-full">
+                  <CardContent className="pt-6 relative h-full flex flex-col">
+                    <motion.div
+                      animate={{
+                        opacity: [0.3, 0.6, 0.3],
+                      }}
+                      transition={{
+                        duration: 3,
+                        repeat: Infinity,
+                        ease: "easeInOut"
+                      }}
+                      className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-transparent"
+                    />
+                    <div className="relative space-y-4 flex-1 flex flex-col">
+                      <div className="flex items-center gap-2">
+                        <Droplets className="h-4 w-4 text-primary" />
+                        <span className="text-sm font-medium">LP Pool</span>
+                      </div>
+                      <div className="flex-1 flex items-center">
+                        <div className="flex items-baseline gap-2">
+                          <motion.span
+                            key={displayBalance}
+                            className={`${getBalanceFontSize()} font-bold tabular-nums bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent transition-all duration-300`}
+                          >
+                            ${displayBalance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          </motion.span>
+                          <motion.div
+                            animate={{
+                              y: [0, -4, 0],
+                            }}
+                            transition={{
+                              duration: 2,
+                              repeat: Infinity,
+                              ease: "easeInOut"
+                            }}
+                          >
+                            <TrendingUp className="h-5 w-5 text-primary" />
+                          </motion.div>
+                        </div>
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        USDC accumulating for Uniswap V4 launch
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            </div>
+          </motion.div>
         </div>
       </section>
 

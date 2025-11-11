@@ -118,7 +118,7 @@ export default function HomePage() {
       </header>
 
       {/* Hero Section */}
-      <section className="container mx-auto px-4 py-20 md:py-32">
+      <section className="container mx-auto px-4 py-12 md:py-20">
         <div className="max-w-3xl mx-auto text-center space-y-8">
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium">
             <Sparkles className="h-4 w-4" />
@@ -160,14 +160,17 @@ export default function HomePage() {
               <Link href="#how-it-works">Learn More</Link>
             </Button>
           </div>
+        </div>
+      </section>
 
-          {/* Progress Indicators */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.2 }}
-            className="mt-16 max-w-4xl mx-auto"
-          >
+      {/* Progress Indicators - Centered between Hero and Lore */}
+      <section className="container mx-auto px-4 py-8 md:py-12">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.2 }}
+          className="max-w-4xl mx-auto"
+        >
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               {/* Mints Progress */}
               <motion.div
@@ -259,12 +262,11 @@ export default function HomePage() {
                 </Card>
               </motion.div>
             </div>
-          </motion.div>
-        </div>
+        </motion.div>
       </section>
 
       {/* About Section */}
-      <section id="about" className="container mx-auto px-4 py-12 md:py-20 bg-muted/30 rounded-3xl my-8 md:my-20">
+      <section id="about" className="container mx-auto px-4 py-8 md:py-12 bg-muted/30 rounded-3xl my-6 md:my-12">
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-5xl font-extrabold mb-8 tracking-tight">
@@ -303,7 +305,7 @@ export default function HomePage() {
 
 
       {/* How It Works Section */}
-      <section id="how-it-works" className="container mx-auto px-4 py-12 md:py-20 bg-muted/30 rounded-3xl my-8 md:my-20">
+      <section id="how-it-works" className="container mx-auto px-4 py-8 md:py-12 bg-muted/30 rounded-3xl my-6 md:my-12">
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-3xl font-bold mb-4">How It Works</h2>
@@ -375,7 +377,7 @@ export default function HomePage() {
       </section>
 
       {/* CTA Section */}
-      <section className="container mx-auto px-4 py-12 md:py-20">
+      <section className="container mx-auto px-4 py-8 md:py-12">
         <Card className="border-2 border-primary/20 bg-gradient-to-br from-primary/5 to-primary/10">
           <CardHeader className="text-center pb-8">
             <CardTitle className="text-3xl mb-2">Ready to Get Started?</CardTitle>
@@ -415,7 +417,7 @@ export default function HomePage() {
       </section>
 
       {/* Footer */}
-      <footer className="border-t mt-12 md:mt-20">
+      <footer className="border-t mt-8 md:mt-12">
         <div className="container mx-auto px-4 py-8">
           <div className="flex flex-col md:flex-row justify-center items-center gap-6">
             <a href="https://x402.org" target="_blank" rel="noopener noreferrer" className="text-sm text-muted-foreground hover:text-foreground transition-colors">

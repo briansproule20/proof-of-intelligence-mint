@@ -6,7 +6,7 @@ import { Bot, ExternalLink, Zap, TrendingUp } from 'lucide-react';
 
 export default function IntelligenceMiner() {
   return (
-    <section id="intelligence-miner" className="container mx-auto px-4 py-12 md:py-20 bg-muted/30 rounded-3xl my-8 md:my-20">
+    <section id="intelligence-miner" className="container mx-auto px-4 py-8 md:py-12 bg-muted/30 rounded-3xl my-6 md:my-12">
       <div className="max-w-4xl mx-auto">
         <div className="text-center mb-12">
           <div className="flex justify-center mb-6">

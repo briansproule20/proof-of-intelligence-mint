@@ -126,7 +126,7 @@ export default function DepartmentOfCognitionWallet() {
 
   if (!isConnected) {
     return (
-      <section id="wallet" className="container mx-auto px-4 py-16">
+      <section id="wallet" className="container mx-auto px-4 py-8 md:py-12">
         <div className="space-y-6">
           {/* Header */}
           <div className="space-y-2">

@@ -90,8 +90,8 @@ export const POIC_ABI = [
   },
 ] as const;
 
-export const CONTRACT_ADDRESS = (process.env.NEXT_PUBLIC_CONTRACT_ADDRESS ||
-  '0x0000000000000000000000000000000000000000') as `0x${string}`;
+// Hardcoded POICv2 contract address on Base mainnet
+export const CONTRACT_ADDRESS = '0xDCf65ACaf5BC4baDA3D3bb38834358dD6a8bA389' as `0x${string}`;
 
 export const CHAIN_ID = parseInt(process.env.NEXT_PUBLIC_CHAIN_ID || '84532');
 

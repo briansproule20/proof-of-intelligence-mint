@@ -45,18 +45,31 @@ const ERC20_ABI = parseAbi([
  */
 export async function forwardUsdcToContract(amount: string = LP_CONTRIBUTION): Promise<string> {
   try {
+    // Check balance first
+    const balance = await getServerUsdcBalance();
+    const amountToSend = BigInt(amount);
+
     console.log('[Server Wallet] Attempting to forward USDC:', {
       from: account.address,
       to: CONTRACT_ADDRESS,
       amount,
+      currentBalance: balance.toString(),
+      balanceUsdc: (Number(balance) / 1_000_000).toFixed(2),
       usdcContract: USDC_ADDRESS_BASE,
     });
+
+    // Check if we have enough balance
+    if (balance < amountToSend) {
+      const errorMsg = `Insufficient USDC balance. Have: ${(Number(balance) / 1_000_000).toFixed(2)} USDC, Need: ${(Number(amountToSend) / 1_000_000).toFixed(2)} USDC`;
+      console.error('[Server Wallet] ❌ ' + errorMsg);
+      throw new Error(errorMsg);
+    }
 
     const hash = await walletClient.writeContract({
       address: USDC_ADDRESS_BASE as `0x${string}`,
       abi: ERC20_ABI,
       functionName: 'transfer',
-      args: [CONTRACT_ADDRESS, BigInt(amount)],
+      args: [CONTRACT_ADDRESS, amountToSend],
     });
 
     console.log(`[Server Wallet] ✅ Forwarded ${amount} USDC to contract, tx: ${hash}`);
